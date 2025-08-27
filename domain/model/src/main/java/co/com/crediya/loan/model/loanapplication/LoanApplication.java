@@ -1,7 +1,5 @@
 package co.com.crediya.loan.model.loanapplication;
 
-import co.com.crediya.loan.model.loanstatus.LoanStatus;
-import co.com.crediya.loan.model.loantype.LoanType;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
