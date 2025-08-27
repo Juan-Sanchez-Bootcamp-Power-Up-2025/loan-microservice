@@ -23,9 +23,9 @@ public class LoanApplication {
 
     private String email;
 
-    private LoanStatus status;
+    private String status;
 
-    private LoanType type;
+    private String type;
 
     private String documentId;
 
