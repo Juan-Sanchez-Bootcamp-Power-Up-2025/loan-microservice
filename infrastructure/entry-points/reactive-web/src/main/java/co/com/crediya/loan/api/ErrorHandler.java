@@ -34,7 +34,7 @@ public class ErrorHandler {
 
     private Mono<ServerResponse> handleLoanTypeNotFoundExceptionException(LoanTypeNotFoundException ex) {
         return ServerResponse.badRequest().bodyValue(Map.of(
-                "error", "Email error",
+                "error", "Loan Type error",
                 "violations", ex.getMessage()
         ));
     }

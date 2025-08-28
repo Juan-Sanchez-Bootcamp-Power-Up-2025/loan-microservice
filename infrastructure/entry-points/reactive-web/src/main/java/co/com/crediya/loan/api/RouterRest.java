@@ -1,9 +1,23 @@
 package co.com.crediya.loan.api;
 
+import co.com.crediya.loan.api.dto.LoanApplicationRequestDto;
+import co.com.crediya.loan.model.loanapplication.LoanApplication;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springdoc.core.annotations.RouterOperation;
+import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+
+import java.util.List;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -12,6 +26,101 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class RouterRest {
 
     @Bean
+    @RouterOperations(
+            @RouterOperation(
+                    path = "/api/v1/loans",
+                    method = RequestMethod.POST,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    beanClass = Handler.class,
+                    beanMethod = "listenSaveLoan",
+                    operation = @Operation(
+                            operationId = "listenSaveLoan",
+                            summary = "Register new loan",
+                            description = "Creates a new loan with amount, term, email, status, type, document id",
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    content = @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = LoanApplicationRequestDto.class),
+                                            examples = {
+                                                    @ExampleObject(name = "Loan example",
+                                                            value = """
+                                                                    {
+                                                                        "amount": 12345,
+                                                                        "term": 10,
+                                                                        "email": "name@crediya.com",
+                                                                        "type": "LOW",
+                                                                        "documentId": "12345678"
+                                                                    }
+                                                                    """,
+                                                            description = "Loan example to test the creation of a loan."
+                                                    )
+                                            }
+                                    )
+                            ),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200", description = "Loan created",
+                                            content = @Content(schema = @Schema(implementation = LoanApplication.class),
+                                                    examples = {
+                                                            @ExampleObject(name = "Loan example",
+                                                                    value = """
+                                                                    {
+                                                                        "amount": 12345,
+                                                                        "term": 10,
+                                                                        "email": "name@crediya.com",
+                                                                        "status": "PENDING",
+                                                                        "type": "LOW",
+                                                                        "documentId": "12345678"
+                                                                    }
+                                                                    """,
+                                                                    description = "Loan example to test the creation of a loan."
+                                                            )
+                                                    }
+                                            )
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400", description = "Invalid Data",
+                                            content = @Content(schema = @Schema(implementation = List.class),
+                                                    examples = {@ExampleObject(
+                                                            name = "Mandatory fields",
+                                                            value = """
+                                                            {
+                                                                 "error": "Invalid data",
+                                                                  "violations": [
+                                                                      {
+                                                                          "message": "term must be greater than 1",
+                                                                          "field": "term"
+                                                                      },
+                                                                      {
+                                                                          "message": "amount must be greater than 0",
+                                                                          "field": "amount"
+                                                                      },
+                                                                      {
+                                                                          "message": "email format is not valid",
+                                                                          "field": "email"
+                                                                      }
+                                                                  ]
+                                                            }
+                                                            """,
+                                                            description = "Bad request for invalid fields."
+                                                    ), @ExampleObject(
+                                                            name = "Invalid type",
+                                                            value = """
+                                                                    {
+                                                                         "error": "Loan Type error",
+                                                                         "violations": "Loan type HIGH4 not found in data base. Please check the type."
+                                                                     }
+                                                            """,
+                                                            description = "Bad request for type."
+                                                    )}
+                                            )
+                                    ),
+                                    @ApiResponse(responseCode = "500", description = "Internal Error")
+                            }
+                    )
+            )
+    )
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/loans"), handler::listenSaveLoan);
     }
