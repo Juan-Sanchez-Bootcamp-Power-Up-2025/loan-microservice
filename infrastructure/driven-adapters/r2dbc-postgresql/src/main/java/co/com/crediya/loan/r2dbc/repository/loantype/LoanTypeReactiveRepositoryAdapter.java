@@ -4,10 +4,12 @@ import co.com.crediya.loan.model.loantype.LoanType;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.r2dbc.entity.LoanTypeEntity;
 import co.com.crediya.loan.r2dbc.helper.ReactiveAdapterOperations;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Repository
 public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         LoanType,
@@ -22,6 +24,7 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
 
     @Override
     public Mono<Boolean> existsById(String typeId) {
+        log.debug("Querying the database for a loan type");
         return repository.existsById(typeId);
     }
 

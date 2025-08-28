@@ -30,3 +30,7 @@ adapters:
     schema: "public"
     username: "loan"
     password: "loan"
+logging:
+  level:
+    root: INFO
+    co.com.crediya.loan: DEBUG

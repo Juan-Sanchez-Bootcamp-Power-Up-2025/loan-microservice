@@ -4,10 +4,12 @@ import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.r2dbc.entity.LoanApplicationEntity;
 import co.com.crediya.loan.r2dbc.helper.ReactiveAdapterOperations;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Repository
 public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         LoanApplication,
@@ -22,6 +24,7 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
 
     @Override
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
+        log.debug("Saving loan in the database");
         return super.save(loanApplication);
     }
 
