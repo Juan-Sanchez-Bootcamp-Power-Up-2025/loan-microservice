@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 public class LoanTypeEntity {
 
     @Id
-    @Column("loan_type_id")
+    @Column("id")
     private String id;
 
     private String name;

@@ -10,9 +10,9 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class LoanApplicationUseCase {
 
-    private LoanApplicationRepository loanApplicationRepository;
+    private final LoanApplicationRepository loanApplicationRepository;
 
-    private LoanTypeRepository loanTypeRepository;
+    private final LoanTypeRepository loanTypeRepository;
 
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
         return loanTypeRepository.existsById(loanApplication.getType())
