@@ -1,6 +1,7 @@
 package co.com.crediya.loan.api;
 
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
+import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -16,8 +17,10 @@ public class ErrorHandler {
         if (ex instanceof ConstraintViolationException constraintViolationException) {
             return handleConstraintViolationException(constraintViolationException);
         } else if (ex instanceof LoanTypeNotFoundException loanTypeNotFoundExceptionException) {
-            return handleLoanTypeNotFoundExceptionException(loanTypeNotFoundExceptionException);
-        } else {
+            return handleLoanTypeNotFoundException(loanTypeNotFoundExceptionException);
+        } else if (ex instanceof UserNotFoundException userNotFoundException) {
+            return handleUserNotFoundException(userNotFoundException);
+        }else {
             return handleException(ex);
         }
     }
@@ -32,9 +35,16 @@ public class ErrorHandler {
         ));
     }
 
-    private Mono<ServerResponse> handleLoanTypeNotFoundExceptionException(LoanTypeNotFoundException ex) {
+    private Mono<ServerResponse> handleLoanTypeNotFoundException(LoanTypeNotFoundException ex) {
         return ServerResponse.badRequest().bodyValue(Map.of(
                 "error", "Loan Type error",
+                "violations", ex.getMessage()
+        ));
+    }
+
+    private Mono<ServerResponse> handleUserNotFoundException(UserNotFoundException ex) {
+        return ServerResponse.badRequest().bodyValue(Map.of(
+                "error", "User error",
                 "violations", ex.getMessage()
         ));
     }

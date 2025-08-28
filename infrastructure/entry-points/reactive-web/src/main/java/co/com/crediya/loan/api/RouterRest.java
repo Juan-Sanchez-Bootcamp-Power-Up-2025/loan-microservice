@@ -113,6 +113,15 @@ public class RouterRest {
                                                                      }
                                                             """,
                                                             description = "Bad request for type."
+                                                    ), @ExampleObject(
+                                                            name = "Invalid user parameters",
+                                                            value = """
+                                                                    {
+                                                                         "error": "User error",
+                                                                         "violations": "User with email = email@crediya.com and document id = 12345678 was not found."
+                                                                     }
+                                                            """,
+                                                            description = "Bad request for user parameters."
                                                     )}
                                             )
                                     ),
