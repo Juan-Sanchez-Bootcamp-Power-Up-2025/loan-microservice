@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 spring:
   application:
     name: "Loan"
@@ -22,3 +22,17 @@ management:
         enabled: true
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8080"
+adapters:
+  r2dbc:
+    host: "localhost"
+    port: 5432
+    database: "loan"
+    schema: "public"
+    username: "loan"
+    password: "loan"
+logging:
+  level:
+    root: INFO
+    co.com.crediya.loan: DEBUG
+auth:
+  base-url: http://localhost:8080
