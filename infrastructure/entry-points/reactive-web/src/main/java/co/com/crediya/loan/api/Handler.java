@@ -9,6 +9,7 @@ import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -30,6 +31,7 @@ public class Handler {
 
     private final TransactionalOperator transactionalOperator;
 
+    @PreAuthorize("hasAuthority('CLIENT')")
     public Mono<ServerResponse> listenSaveLoan(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(LoanApplicationRequestDto.class)
                 .doOnSubscribe(subscription -> log.debug(">> POST /api/v1/loans - start"))
