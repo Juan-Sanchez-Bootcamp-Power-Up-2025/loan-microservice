@@ -2,6 +2,7 @@ package co.com.crediya.loan.r2dbc.repository.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.r2dbc.entity.LoanApplicationEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.query.ReactiveQueryByExampleExecutor;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -27,5 +28,13 @@ public interface LoanApplicationReactiveRepository extends ReactiveCrudRepositor
             ORDER BY status
             """)
     Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved();
+
+    @Query("""
+            SELECT email, document_id, status, type, amount, term
+            FROM loan_applications
+            WHERE status != 'APPROVED'
+            ORDER BY status
+            """)
+    Flux<LoanApplication> getLoanApplicationsWhereStatusNotApprovedPaginate(Pageable pagination);
 
 }

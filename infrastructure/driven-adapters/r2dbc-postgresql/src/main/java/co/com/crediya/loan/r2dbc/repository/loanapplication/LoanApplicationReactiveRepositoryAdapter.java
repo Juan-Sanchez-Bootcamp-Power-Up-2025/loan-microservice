@@ -6,6 +6,8 @@ import co.com.crediya.loan.r2dbc.entity.LoanApplicationEntity;
 import co.com.crediya.loan.r2dbc.helper.ReactiveAdapterOperations;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -41,6 +43,11 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
     public Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved() {
         log.debug("Getting loan applications with status different approved");
         return repository.getLoanApplicationsWhereStatusNotApproved();
+    }
+
+    @Override
+    public Flux<LoanApplication> getLoanApplicationsWhereStatusNotApprovedPaginate(int page, int size) {
+        return repository.getLoanApplicationsWhereStatusNotApprovedPaginate(PageRequest.of(page, size));
     }
 
 }

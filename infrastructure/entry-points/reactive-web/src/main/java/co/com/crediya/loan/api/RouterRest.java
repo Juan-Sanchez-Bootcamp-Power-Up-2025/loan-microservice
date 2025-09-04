@@ -2,7 +2,9 @@ package co.com.crediya.loan.api;
 
 import co.com.crediya.loan.api.dto.LoanApplicationRequestDto;
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
+import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,7 +29,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class RouterRest {
 
     @Bean
-    @RouterOperations(
+    @RouterOperations({
             @RouterOperation(
                     path = "/api/v1/loans",
                     method = RequestMethod.POST,
@@ -129,11 +131,116 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "500", description = "Internal Error")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/loans",
+                    method = RequestMethod.GET,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    beanClass = Handler.class,
+                    beanMethod = "listenGetLoansListPaginate",
+                    operation = @Operation(
+                            operationId = "listenGetLoansListPaginate",
+                            summary = "Gets loans",
+                            description = "Gets loans with status MANUAL_REVISION, PENDING or REJECTED",
+                            parameters = {
+                                    @Parameter(
+                                            name = "page",
+                                            example = "2"
+                                    ),
+                                    @Parameter(
+                                            name = "size",
+                                            example = "4"
+                                    )
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200", description = "Loan list",
+                                            content = @Content(
+                                                    examples = {
+                                                            @ExampleObject(name = "Loan list paginated example",
+                                                                    value = """
+                                                                            {
+                                                                                 "loanApplicationReviews": [
+                                                                                     {
+                                                                                         "email": "client@crediya.com",
+                                                                                         "documentId": "12345678",
+                                                                                         "status": "PENDING",
+                                                                                         "type": "LOW",
+                                                                                         "amount": 327875,
+                                                                                         "term": 2,
+                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     },
+                                                                                     {
+                                                                                         "email": "client@crediya.com",
+                                                                                         "documentId": "12345678",
+                                                                                         "status": "PENDING",
+                                                                                         "type": "LOW",
+                                                                                         "amount": 78645,
+                                                                                         "term": 78,
+                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     },
+                                                                                     {
+                                                                                         "email": "client@crediya.com",
+                                                                                         "documentId": "12345678",
+                                                                                         "status": "REJECTED",
+                                                                                         "type": "HIGH",
+                                                                                         "amount": 124,
+                                                                                         "term": 4,
+                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     }
+                                                                                 ],
+                                                                                 "total": 7,
+                                                                                 "page": 2,
+                                                                                 "size": 4
+                                                                             }
+                                                                    """,
+                                                                    description = "Loan list example with page and size parameters."
+                                                            ),
+                                                            @ExampleObject(name = "Loan list example",
+                                                                    value = """
+                                                                             [
+                                                                                 {
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "12345678",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "LOW",
+                                                                                     "amount": 327875,
+                                                                                     "term": 2,
+                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                 },
+                                                                                 {
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "12345678",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "LOW",
+                                                                                     "amount": 78645,
+                                                                                     "term": 78,
+                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                 },
+                                                                                 {
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "12345678",
+                                                                                     "status": "REJECTED",
+                                                                                     "type": "HIGH",
+                                                                                     "amount": 124,
+                                                                                     "term": 4,
+                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                 }
+                                                                             ]
+                                                                    """,
+                                                                    description = "Loan list example with no parameters."
+                                                            )
+                                                    }
+                                            )
+                                    ),
+                                    @ApiResponse(responseCode = "500", description = "Internal Error")
+                            }
+                    )
             )
-    )
+    })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/loans"), handler::listenSaveLoan)
-                .andRoute(GET("api/v1/loans"), handler::listenGetLoansList);
+                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate);
     }
 
 }

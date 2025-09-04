@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -56,12 +57,31 @@ public class Handler {
         return loanApplicationUseCase.listLoanApplicationsForConsultant()
                 .collectList()
                 .doOnSubscribe(subscription -> log.debug(">> GET /api/v1/loans - start"))
-                .flatMap(loansList -> ServerResponse.ok()
+                .flatMap(loansList ->
+                        ServerResponse.ok().header("Loans-list-pagination-enabled", "false")
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(loansList))
                 .doOnSuccess(success -> log.info("Got loans list for consultant user"))
                 .doOnError(error -> log.error("Error trying to get loans list: {}", error.getMessage()))
                 .doFinally(signalType -> log.debug("<< GET /api/v1/loans - end"));
+    }
+
+    @PreAuthorize("hasAuthority('CONSULTANT')")
+    public Mono<ServerResponse> listenGetLoansListPaginate(ServerRequest serverRequest) {
+        Optional<Integer> page = serverRequest.queryParam("page").map(Integer::valueOf);
+        Optional<Integer> size = serverRequest.queryParam("size").map(Integer::valueOf);
+        if (page.isPresent() && size.isPresent()) {
+            return loanApplicationUseCase.listLoanApplicationsForConsultantPaginate(page.get(), size.get())
+                    .doOnSubscribe(subscription -> log.debug(">> GET Paginate /api/v1/loans - start"))
+                    .flatMap(loansList ->
+                            ServerResponse.ok().header("Loans-list-pagination-enabled", "true")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .bodyValue(loansList))
+                    .doOnSuccess(success -> log.info("Got loans list for consultant user paginate"))
+                    .doOnError(error -> log.error("Error trying to get loans list paginate: {}", error.getMessage()))
+                    .doFinally(signalType -> log.debug("<< GET Paginate /api/v1/loans - end"));
+        }
+        return listenGetLoansList(serverRequest);
     }
 
 }

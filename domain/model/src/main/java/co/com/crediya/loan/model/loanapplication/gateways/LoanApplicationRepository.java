@@ -14,4 +14,6 @@ public interface LoanApplicationRepository {
 
     Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved();
 
+    Flux<LoanApplication> getLoanApplicationsWhereStatusNotApprovedPaginate(int page, int size);
+
 }
