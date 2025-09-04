@@ -15,16 +15,18 @@ import java.math.BigDecimal;
 @Builder(toBuilder = true)
 public class LoanApplication {
 
-    private BigDecimal amount;
-
-    private int term;
-
     private String email;
+
+    private String documentId;
 
     private String status;
 
     private String type;
 
-    private String documentId;
+    private BigDecimal amount;
+
+    private BigDecimal term;
+
+    private BigDecimal monthlyFee;
 
 }

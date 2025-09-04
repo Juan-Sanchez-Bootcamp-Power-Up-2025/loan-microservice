@@ -18,12 +18,14 @@ CREATE TABLE IF NOT EXISTS loan_statuses (
 -- LOAN APPLICATION
 CREATE TABLE IF NOT EXISTS loan_applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  amount NUMERIC(15) NOT NULL,
-  term NUMERIC(5) NOT NULL,
   email VARCHAR(50) NOT NULL ,
+  document_id VARCHAR(20) NOT NULL,
   status VARCHAR(20) NOT NULL,
   type VARCHAR(20) NOT NULL,
-  document_id VARCHAR(20) NOT NULL,
+  amount NUMERIC(15) NOT NULL,
+  term NUMERIC(5) NOT NULL,
+  monthly_fee NUMERIC(15) NOT NULL,
+
   CONSTRAINT fk_loan_application_loan_status FOREIGN KEY (status) REFERENCES loan_statuses(id),
   CONSTRAINT fk_loan_application_loan_type FOREIGN KEY (type) REFERENCES loan_types(id)
 );
@@ -35,4 +37,7 @@ VALUES
 
 INSERT INTO loan_statuses (id, name, description)
 VALUES
-('PENDING', 'Pending revision', 'The loan application was submitted.');
+('PENDING', 'Pending review', 'The loan application was submitted.'),
+('MANUAL_REVIEW', 'Manual review', 'The loan application needs to be reviewed by a consultant.');
+('REJECTED', 'Loan rejected', 'The loan application was rejected.');
+('APPROVED', 'Loan approved', 'The loan application was approved.');
