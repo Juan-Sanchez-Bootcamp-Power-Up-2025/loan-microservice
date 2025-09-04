@@ -1,12 +1,14 @@
 package co.com.crediya.loan.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
+import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import co.com.crediya.loan.model.loanapplication.gateways.IdentityVerificationGateway;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -47,6 +49,25 @@ public class LoanApplicationUseCase {
         double m = amount.doubleValue();
         double fee = (m * i) / (1 - Math.pow(1 + i, -n));
         return BigDecimal.valueOf(fee).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public Flux<LoanApplicationReview> listLoanApplicationsForConsultant() {
+        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApproved()
+                .flatMap(loanApplication -> loanApplicationRepository.getUserTotalSumLoanApplicationsApproved(loanApplication.getDocumentId())
+                        .defaultIfEmpty(BigDecimal.ZERO)
+                        .map(approvedTotalDebt -> toReview(loanApplication, approvedTotalDebt)));
+    }
+
+    private LoanApplicationReview toReview(LoanApplication loanApplication, BigDecimal approvedTotalDebt) {
+        return new LoanApplicationReview(
+                loanApplication.getEmail(),
+                loanApplication.getDocumentId(),
+                loanApplication.getStatus(),
+                loanApplication.getType(),
+                loanApplication.getAmount(),
+                loanApplication.getTerm(),
+                approvedTotalDebt
+        );
     }
 
 }

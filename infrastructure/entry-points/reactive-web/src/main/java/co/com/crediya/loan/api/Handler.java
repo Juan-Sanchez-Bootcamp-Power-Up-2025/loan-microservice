@@ -51,4 +51,17 @@ public class Handler {
                 .doFinally(signalType -> log.debug("<< POST /api/v1/loans - end"));
     }
 
+    @PreAuthorize("hasAuthority('CONSULTANT')")
+    public Mono<ServerResponse> listenGetLoansList(ServerRequest serverRequest) {
+        return loanApplicationUseCase.listLoanApplicationsForConsultant()
+                .collectList()
+                .doOnSubscribe(subscription -> log.debug(">> GET /api/v1/loans - start"))
+                .flatMap(loansList -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(loansList))
+                .doOnSuccess(success -> log.info("Got loans list for consultant user"))
+                .doOnError(error -> log.error("Error trying to get loans list: {}", error.getMessage()))
+                .doFinally(signalType -> log.debug("<< GET /api/v1/loans - end"));
+    }
+
 }
