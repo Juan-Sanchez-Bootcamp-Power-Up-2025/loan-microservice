@@ -23,9 +23,9 @@ public class LoanTypeReactiveRepositoryAdapter extends ReactiveAdapterOperations
     }
 
     @Override
-    public Mono<Boolean> existsById(String typeId) {
-        log.debug("Querying the database for a loan type");
-        return repository.existsById(typeId);
+    public Mono<LoanType> findByTypeId(String typeId) {
+        log.debug("Querying loan type by id");
+        return super.findById(typeId);
     }
 
 }

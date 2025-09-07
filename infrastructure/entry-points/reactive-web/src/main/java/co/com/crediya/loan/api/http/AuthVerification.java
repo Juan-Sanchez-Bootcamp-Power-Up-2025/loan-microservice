@@ -1,7 +1,7 @@
 package co.com.crediya.loan.api.http;
 
-import co.com.crediya.loan.api.dto.ValidateResponseDto;
-import co.com.crediya.loan.model.loanapplication.gateways.IdentityVerificationGateway;
+import co.com.crediya.loan.model.user.User;
+import co.com.crediya.loan.model.user.gateways.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -14,12 +14,12 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AuthIdentityVerification implements IdentityVerificationGateway {
+public class AuthVerification implements UserRepository {
 
     private final WebClient authWebClient;
 
     @Override
-    public Mono<Boolean> validateUserWithEmailAndDocument(String email, String documentId) {
+    public Mono<User> validateUserByDocumentId(String email, String documentId) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .flatMap(authentication -> !authentication.getPrincipal().equals(email)
@@ -31,14 +31,17 @@ public class AuthIdentityVerification implements IdentityVerificationGateway {
                                 .build())
                         .headers(header -> header.setBearerAuth(authentication.getDetails().toString()))
                         .retrieve()
+                        .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                            log.debug("Authentication service 4xx");
+                            return Mono.error(new RuntimeException("User with id " + documentId + " was not found"));
+                        })
                         .onStatus(HttpStatusCode::is5xxServerError, response -> {
                             log.debug("Authentication service 5xx");
                             return Mono.error(new RuntimeException("Authentication service not available"));
                         })
-                        .bodyToMono(ValidateResponseDto.class)
-                        .map(ValidateResponseDto::valid)
+                        .bodyToMono(User.class)
                 )
-                .doOnSuccess(ok -> log.debug("User found with email={} documentId={}  => {}", email, documentId, ok));
+                .doOnSuccess(ok -> log.debug("User found with documentId={}", documentId));
     }
 
 }

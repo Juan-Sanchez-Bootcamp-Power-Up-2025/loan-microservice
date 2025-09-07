@@ -2,7 +2,9 @@ package co.com.crediya.loan.api;
 
 import co.com.crediya.loan.api.dto.LoanApplicationRequestDto;
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
+import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,6 +21,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import java.util.List;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
@@ -26,7 +29,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class RouterRest {
 
     @Bean
-    @RouterOperations(
+    @RouterOperations({
             @RouterOperation(
                     path = "/api/v1/loans",
                     method = RequestMethod.POST,
@@ -46,11 +49,11 @@ public class RouterRest {
                                                     @ExampleObject(name = "Loan example",
                                                             value = """
                                                                     {
-                                                                        "amount": 12345,
-                                                                        "term": 10,
                                                                         "email": "name@crediya.com",
+                                                                        "documentId": "12345678",
                                                                         "type": "LOW",
-                                                                        "documentId": "12345678"
+                                                                        "amount": 12345,
+                                                                        "term": 10
                                                                     }
                                                                     """,
                                                             description = "Loan example to test the creation of a loan."
@@ -66,12 +69,13 @@ public class RouterRest {
                                                             @ExampleObject(name = "Loan example",
                                                                     value = """
                                                                     {
-                                                                        "amount": 12345,
-                                                                        "term": 10,
                                                                         "email": "name@crediya.com",
+                                                                        "documentId": "12345678",
                                                                         "status": "PENDING",
                                                                         "type": "LOW",
-                                                                        "documentId": "12345678"
+                                                                        "amount": 12345,
+                                                                        "term": 10,
+                                                                        "monthlyDebt": 123543
                                                                     }
                                                                     """,
                                                                     description = "Loan example to test the creation of a loan."
@@ -128,10 +132,158 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "500", description = "Internal Error")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/loans",
+                    method = RequestMethod.GET,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    beanClass = Handler.class,
+                    beanMethod = "listenGetLoansListPaginate",
+                    operation = @Operation(
+                            operationId = "listenGetLoansListPaginate",
+                            summary = "Gets loans",
+                            description = "Gets loans with status MANUAL_REVISION, PENDING or REJECTED",
+                            parameters = {
+                                    @Parameter(
+                                            name = "page",
+                                            example = "2"
+                                    ),
+                                    @Parameter(
+                                            name = "size",
+                                            example = "4"
+                                    )
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200", description = "Loan list",
+                                            content = @Content(
+                                                    examples = {
+                                                            @ExampleObject(name = "Loan list paginated example",
+                                                                    value = """
+                                                                            {
+                                                                                  "loanApplicationReviews": [
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "MANUAL_REVIEW",
+                                                                                            "type": "LOW",
+                                                                                            "interestRate": 9,
+                                                                                            "amount": 876,
+                                                                                            "term": 9,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 878
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "MANUAL_REVIEW",
+                                                                                            "type": "HIGH",
+                                                                                            "interestRate": 60,
+                                                                                            "amount": 23254,
+                                                                                            "term": 96,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 116270
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "PENDING",
+                                                                                            "type": "LOW",
+                                                                                            "interestRate": 9,
+                                                                                            "amount": 124,
+                                                                                            "term": 7,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 125
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "PENDING",
+                                                                                            "type": "HIGH",
+                                                                                            "interestRate": 60,
+                                                                                            "amount": 67,
+                                                                                            "term": 2,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 345
+                                                                                        }
+                                                                                  ],
+                                                                                  "total": 7,
+                                                                                  "page": 1,
+                                                                                  "size": 4
+                                                                            }
+                                                                    """,
+                                                                    description = "Loan list example with page and size parameters."
+                                                            ),
+                                                            @ExampleObject(name = "Loan list example",
+                                                                    value = """
+                                                                             [
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "MANUAL_REVIEW",
+                                                                                     "type": "LOW",
+                                                                                     "interestRate": 9,
+                                                                                     "amount": 876,
+                                                                                     "term": 9,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 878
+                                                                                 },
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "MANUAL_REVIEW",
+                                                                                     "type": "HIGH",
+                                                                                     "interestRate": 60,
+                                                                                     "amount": 23254,
+                                                                                     "term": 96,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 116270
+                                                                                 },
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "LOW",
+                                                                                     "interestRate": 9,
+                                                                                     "amount": 124,
+                                                                                     "term": 7,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 125
+                                                                                 },
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "HIGH",
+                                                                                     "interestRate": 60,
+                                                                                     "amount": 67,
+                                                                                     "term": 2,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 345
+                                                                                 }
+                                                                             ]
+                                                                    """,
+                                                                    description = "Loan list example with no parameters."
+                                                            )
+                                                    }
+                                            )
+                                    ),
+                                    @ApiResponse(responseCode = "500", description = "Internal Error")
+                            }
+                    )
             )
-    )
+    })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-        return route(POST("/api/v1/loans"), handler::listenSaveLoan);
+        return route(POST("/api/v1/loans"), handler::listenSaveLoan)
+                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate);
     }
 
 }

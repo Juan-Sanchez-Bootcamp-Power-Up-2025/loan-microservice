@@ -22,7 +22,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
         return Mono.just(authentication)
                 .map(auth -> jwtUtil.getClaims(auth.getCredentials().toString()))
                 .log()
-                .onErrorResume(error -> Mono.error(new Throwable("Bad token")))
+                .onErrorResume(error -> Mono.error(new RuntimeException("Bad token")))
                 .map(claims -> {
                     String token = authentication.getPrincipal().toString();
                     var authorities = List.of(new SimpleGrantedAuthority(String.valueOf(claims.get("role"))));
