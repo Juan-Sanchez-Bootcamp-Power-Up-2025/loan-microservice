@@ -4,6 +4,6 @@ import reactor.core.publisher.Mono;
 
 public interface IdentityVerificationGateway {
 
-    Mono<Boolean> validateUserWithEmailAndDocument(String email, String documentId);
+    Mono<Boolean> validateUserByDocumentId(String email, String documentId);
 
 }

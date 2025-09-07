@@ -15,9 +15,13 @@ import java.math.BigDecimal;
 @Builder(toBuilder = true)
 public class LoanApplication {
 
+    private String clientName;
+
     private String email;
 
     private String documentId;
+
+    private BigDecimal baseSalary;
 
     private String status;
 
@@ -27,6 +31,6 @@ public class LoanApplication {
 
     private BigDecimal term;
 
-    private BigDecimal monthlyFee;
+    private BigDecimal monthlyDebt;
 
 }

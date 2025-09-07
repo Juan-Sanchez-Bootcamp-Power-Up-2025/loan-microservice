@@ -2,10 +2,10 @@ package co.com.crediya.loan.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
-import co.com.crediya.loan.model.loanapplication.gateways.IdentityVerificationGateway;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
+import co.com.crediya.loan.model.user.gateways.UserRepository;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -23,25 +23,22 @@ public class LoanApplicationUseCase {
 
     private final LoanTypeRepository loanTypeRepository;
 
-    private final IdentityVerificationGateway identityVerificationGateway;
+    private final UserRepository userRepository;
 
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
-        return identityVerificationGateway.validateUserWithEmailAndDocument(loanApplication.getEmail(),
+        return userRepository.validateUserByDocumentId(loanApplication.getEmail(),
                         loanApplication.getDocumentId())
-                .flatMap(valid -> {
-                    if (!valid) {
-                        return Mono.error(new UserNotFoundException(loanApplication.getEmail(),
-                                loanApplication.getDocumentId()));
-                    }
-                    return loanTypeRepository.findById(loanApplication.getType())
-                            .switchIfEmpty(Mono.error(new LoanTypeNotFoundException(loanApplication.getType())))
-                            .flatMap(loanType -> {
-                                loanApplication.setStatus("PENDING");
-                                loanApplication.setMonthlyFee(calculateMonthlyFee(loanApplication.getAmount(),
-                                        loanApplication.getTerm(), loanType.getInterestRate()));
-                                return loanApplicationRepository.saveLoanApplication(loanApplication);
-                            });
-                });
+                .switchIfEmpty(Mono.error(new UserNotFoundException(loanApplication.getDocumentId())))
+                .flatMap(user -> loanTypeRepository.findById(loanApplication.getType())
+                        .switchIfEmpty(Mono.error(new LoanTypeNotFoundException(loanApplication.getType())))
+                        .flatMap(loanType -> {
+                            loanApplication.setClientName(user.getName());
+                            loanApplication.setBaseSalary(user.getBaseSalary());
+                            loanApplication.setStatus("PENDING");
+                            loanApplication.setMonthlyDebt(calculateMonthlyFee(loanApplication.getAmount(),
+                                    loanApplication.getTerm(), loanType.getInterestRate()));
+                            return loanApplicationRepository.saveLoanApplication(loanApplication);
+                        }));
     }
 
     private BigDecimal calculateMonthlyFee(BigDecimal amount, BigDecimal term, BigDecimal interestRate) {
@@ -56,35 +53,37 @@ public class LoanApplicationUseCase {
     public Flux<LoanApplicationReview> listLoanApplicationsForConsultant() {
         return loanApplicationRepository.getLoanApplicationsWhereStatusNotApproved()
                 .flatMap(loanApplication ->
-                        loanApplicationRepository.getUserTotalSumLoanApplicationsApproved(loanApplication.getDocumentId())
-                                .defaultIfEmpty(BigDecimal.ZERO)
-                                .map(approvedTotalDebt -> toReview(loanApplication, approvedTotalDebt)));
+                        loanTypeRepository.findById(loanApplication.getType())
+                                .map(loanType -> toReview(loanApplication, loanType.getInterestRate())));
     }
 
-    public Mono<PageResult> listLoanApplicationsForConsultantPaginate(int page, int size) {
-        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApprovedPaginate(page, size)
-                .flatMap(loanApplication ->
-                        loanApplicationRepository.getUserTotalSumLoanApplicationsApproved(loanApplication.getDocumentId())
-                                .defaultIfEmpty(BigDecimal.ZERO)
-                                .map(approvedTotalDebt -> toReview(loanApplication, approvedTotalDebt)))
-                .collectList()
-                .map(list -> {
-                    int total = list.size();
-                    int start = (page - 1) * size;
-                    List<LoanApplicationReview> loanApplicationReviews = list.stream().skip(start).limit(size).toList();
-                    return new PageResult(loanApplicationReviews, total, page, size);
-                });
-    }
+//    public Mono<PageResult> listLoanApplicationsForConsultantPaginate(int page, int size) {
+//        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApprovedPaginate(page, size)
+//                .flatMap(loanApplication ->
+//                        loanApplicationRepository.getUserTotalSumLoanApplicationsApproved(loanApplication.getDocumentId())
+//                                .defaultIfEmpty(BigDecimal.ZERO)
+//                                .map(approvedTotalDebt -> toReview(loanApplication, approvedTotalDebt)))
+//                .collectList()
+//                .map(list -> {
+//                    int total = list.size();
+//                    int start = (page - 1) * size;
+//                    List<LoanApplicationReview> loanApplicationReviews = list.stream().skip(start).limit(size).toList();
+//                    return new PageResult(loanApplicationReviews, total, page, size);
+//                });
+//    }
 
-    private LoanApplicationReview toReview(LoanApplication loanApplication, BigDecimal approvedTotalDebt) {
+    private LoanApplicationReview toReview(LoanApplication loanApplication, BigDecimal interestRate) {
         return new LoanApplicationReview(
+                loanApplication.getClientName(),
                 loanApplication.getEmail(),
                 loanApplication.getDocumentId(),
                 loanApplication.getStatus(),
                 loanApplication.getType(),
+                interestRate,
                 loanApplication.getAmount(),
                 loanApplication.getTerm(),
-                approvedTotalDebt
+                loanApplication.getBaseSalary(),
+                loanApplication.getMonthlyDebt()
         );
     }
 

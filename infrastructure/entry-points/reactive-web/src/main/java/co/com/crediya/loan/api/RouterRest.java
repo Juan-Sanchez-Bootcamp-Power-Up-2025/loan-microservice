@@ -49,11 +49,11 @@ public class RouterRest {
                                                     @ExampleObject(name = "Loan example",
                                                             value = """
                                                                     {
-                                                                        "amount": 12345,
-                                                                        "term": 10,
                                                                         "email": "name@crediya.com",
+                                                                        "documentId": "12345678",
                                                                         "type": "LOW",
-                                                                        "documentId": "12345678"
+                                                                        "amount": 12345,
+                                                                        "term": 10
                                                                     }
                                                                     """,
                                                             description = "Loan example to test the creation of a loan."
@@ -69,12 +69,13 @@ public class RouterRest {
                                                             @ExampleObject(name = "Loan example",
                                                                     value = """
                                                                     {
-                                                                        "amount": 12345,
-                                                                        "term": 10,
                                                                         "email": "name@crediya.com",
+                                                                        "documentId": "12345678",
                                                                         "status": "PENDING",
                                                                         "type": "LOW",
-                                                                        "documentId": "12345678"
+                                                                        "amount": 12345,
+                                                                        "term": 10,
+                                                                        "monthlyDebt": 123543
                                                                     }
                                                                     """,
                                                                     description = "Loan example to test the creation of a loan."
@@ -168,7 +169,7 @@ public class RouterRest {
                                                                                          "type": "LOW",
                                                                                          "amount": 327875,
                                                                                          "term": 2,
-                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                         "monthlyDebt": 116899
                                                                                      },
                                                                                      {
                                                                                          "email": "client@crediya.com",
@@ -177,7 +178,7 @@ public class RouterRest {
                                                                                          "type": "LOW",
                                                                                          "amount": 78645,
                                                                                          "term": 78,
-                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                         "monthlyDebt": 116899
                                                                                      },
                                                                                      {
                                                                                          "email": "client@crediya.com",
@@ -186,7 +187,7 @@ public class RouterRest {
                                                                                          "type": "HIGH",
                                                                                          "amount": 124,
                                                                                          "term": 4,
-                                                                                         "totalMonthlyDebtApprovedLoans": 116899
+                                                                                         "monthlyDebt": 116899
                                                                                      }
                                                                                  ],
                                                                                  "total": 7,
@@ -206,7 +207,7 @@ public class RouterRest {
                                                                                      "type": "LOW",
                                                                                      "amount": 327875,
                                                                                      "term": 2,
-                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     "monthlyDebt": 116899
                                                                                  },
                                                                                  {
                                                                                      "email": "client@crediya.com",
@@ -215,7 +216,7 @@ public class RouterRest {
                                                                                      "type": "LOW",
                                                                                      "amount": 78645,
                                                                                      "term": 78,
-                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     "monthlyDebt": 116899
                                                                                  },
                                                                                  {
                                                                                      "email": "client@crediya.com",
@@ -224,7 +225,7 @@ public class RouterRest {
                                                                                      "type": "HIGH",
                                                                                      "amount": 124,
                                                                                      "term": 4,
-                                                                                     "totalMonthlyDebtApprovedLoans": 116899
+                                                                                     "monthlyDebt": 116899
                                                                                  }
                                                                              ]
                                                                     """,
@@ -240,7 +241,7 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/loans"), handler::listenSaveLoan)
-                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate);
+                .andRoute(GET("api/v1/loans"), handler::listenGetLoansList);
     }
 
 }

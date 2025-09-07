@@ -22,7 +22,7 @@ public interface LoanApplicationReactiveRepository extends ReactiveCrudRepositor
     Mono<BigDecimal> sumApprovedFeesByDocumentId(String documentId);
 
     @Query("""
-            SELECT email, document_id, status, type, amount, term
+            SELECT client_name, email, document_id, status, type, amount, term, base_salary, monthly_debt
             FROM loan_applications
             WHERE status != 'APPROVED'
             ORDER BY status
@@ -30,7 +30,7 @@ public interface LoanApplicationReactiveRepository extends ReactiveCrudRepositor
     Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved();
 
     @Query("""
-            SELECT email, document_id, status, type, amount, term
+            SELECT client_name, email, document_id, status, type, amount, term, base_salary, monthly_debt
             FROM loan_applications
             WHERE status != 'APPROVED'
             ORDER BY status

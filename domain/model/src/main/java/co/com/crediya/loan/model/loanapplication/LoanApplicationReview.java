@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 @Builder(toBuilder = true)
 public class LoanApplicationReview {
 
+    private String name;
+
     private String email;
 
     private String documentId;
@@ -19,10 +21,14 @@ public class LoanApplicationReview {
 
     private String type;
 
+    private BigDecimal interestRate;
+
     private BigDecimal amount;
 
     private BigDecimal term;
 
-    private BigDecimal totalMonthlyDebtApprovedLoans;
+    private BigDecimal baseSalary;
+
+    private BigDecimal monthlyDebt;
 
 }

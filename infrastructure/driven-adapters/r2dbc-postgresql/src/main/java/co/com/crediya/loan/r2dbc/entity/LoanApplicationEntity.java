@@ -19,9 +19,13 @@ public class LoanApplicationEntity {
     @Column("id")
     private String id;
 
+    private String clientName;
+
     private String email;
 
     private String documentId;
+
+    private BigDecimal baseSalary;
 
     private String status;
 
@@ -31,6 +35,6 @@ public class LoanApplicationEntity {
 
     private BigDecimal term;
 
-    private BigDecimal monthlyFee;
+    private BigDecimal monthlyDebt;
 
 }
