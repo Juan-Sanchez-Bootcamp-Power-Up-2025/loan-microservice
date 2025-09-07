@@ -29,7 +29,7 @@ public class LoanApplicationUseCase {
         return userRepository.validateUserByDocumentId(loanApplication.getEmail(),
                         loanApplication.getDocumentId())
                 .switchIfEmpty(Mono.error(new UserNotFoundException(loanApplication.getDocumentId())))
-                .flatMap(user -> loanTypeRepository.findById(loanApplication.getType())
+                .flatMap(user -> loanTypeRepository.findByTypeId(loanApplication.getType())
                         .switchIfEmpty(Mono.error(new LoanTypeNotFoundException(loanApplication.getType())))
                         .flatMap(loanType -> {
                             loanApplication.setClientName(user.getName());
@@ -46,21 +46,21 @@ public class LoanApplicationUseCase {
         double i = monthlyInterestRate.doubleValue();
         double n = term.doubleValue();
         double m = amount.doubleValue();
-        double fee = (m * i) / (1 - Math.pow(1 + i, -n));
-        return BigDecimal.valueOf(fee).setScale(2, RoundingMode.HALF_UP);
+        double debt = (m * i) / (1 - Math.pow(1 + i, -n));
+        return BigDecimal.valueOf(debt).setScale(2, RoundingMode.HALF_UP);
     }
 
     public Flux<LoanApplicationReview> listLoanApplicationsForConsultant() {
         return loanApplicationRepository.getLoanApplicationsWhereStatusNotApproved()
                 .flatMap(loanApplication ->
-                        loanTypeRepository.findById(loanApplication.getType())
+                        loanTypeRepository.findByTypeId(loanApplication.getType())
                                 .map(loanType -> toReview(loanApplication, loanType.getInterestRate())));
     }
 
     public Mono<PageResult> listLoanApplicationsForConsultantPaginate(int page, int size) {
-        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApprovedPaginate(page, size)
+        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApproved()
                 .flatMap(loanApplication ->
-                        loanTypeRepository.findById(loanApplication.getType())
+                        loanTypeRepository.findByTypeId(loanApplication.getType())
                                 .map(loanType -> toReview(loanApplication, loanType.getInterestRate())))
                 .collectList()
                 .map(list -> {

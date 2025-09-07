@@ -10,10 +10,6 @@ public interface LoanApplicationRepository {
 
     Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication);
 
-    Mono<BigDecimal> getUserTotalSumLoanApplicationsApproved(String documentId);
-
     Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved();
-
-    Flux<LoanApplication> getLoanApplicationsWhereStatusNotApprovedPaginate(int page, int size);
 
 }

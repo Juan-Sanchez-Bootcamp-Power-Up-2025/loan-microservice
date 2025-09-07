@@ -34,20 +34,9 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
     }
 
     @Override
-    public Mono<BigDecimal> getUserTotalSumLoanApplicationsApproved(String documentId) {
-        log.debug("Getting sum of approved monthly fees by document id");
-        return repository.sumApprovedFeesByDocumentId(documentId);
-    }
-
-    @Override
     public Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved() {
-        log.debug("Getting loan applications with status different approved");
+        log.debug("Querying loan applications with status different approved");
         return repository.getLoanApplicationsWhereStatusNotApproved();
-    }
-
-    @Override
-    public Flux<LoanApplication> getLoanApplicationsWhereStatusNotApprovedPaginate(int page, int size) {
-        return repository.getLoanApplicationsWhereStatusNotApprovedPaginate(PageRequest.of(page, size));
     }
 
 }
