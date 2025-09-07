@@ -57,20 +57,19 @@ public class LoanApplicationUseCase {
                                 .map(loanType -> toReview(loanApplication, loanType.getInterestRate())));
     }
 
-//    public Mono<PageResult> listLoanApplicationsForConsultantPaginate(int page, int size) {
-//        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApprovedPaginate(page, size)
-//                .flatMap(loanApplication ->
-//                        loanApplicationRepository.getUserTotalSumLoanApplicationsApproved(loanApplication.getDocumentId())
-//                                .defaultIfEmpty(BigDecimal.ZERO)
-//                                .map(approvedTotalDebt -> toReview(loanApplication, approvedTotalDebt)))
-//                .collectList()
-//                .map(list -> {
-//                    int total = list.size();
-//                    int start = (page - 1) * size;
-//                    List<LoanApplicationReview> loanApplicationReviews = list.stream().skip(start).limit(size).toList();
-//                    return new PageResult(loanApplicationReviews, total, page, size);
-//                });
-//    }
+    public Mono<PageResult> listLoanApplicationsForConsultantPaginate(int page, int size) {
+        return loanApplicationRepository.getLoanApplicationsWhereStatusNotApprovedPaginate(page, size)
+                .flatMap(loanApplication ->
+                        loanTypeRepository.findById(loanApplication.getType())
+                                .map(loanType -> toReview(loanApplication, loanType.getInterestRate())))
+                .collectList()
+                .map(list -> {
+                    int total = list.size();
+                    int start = (page - 1) * size;
+                    List<LoanApplicationReview> loanApplicationReviews = list.stream().skip(start).limit(size).toList();
+                    return new PageResult(loanApplicationReviews, total, page, size);
+                });
+    }
 
     private LoanApplicationReview toReview(LoanApplication loanApplication, BigDecimal interestRate) {
         return new LoanApplicationReview(

@@ -161,39 +161,60 @@ public class RouterRest {
                                                             @ExampleObject(name = "Loan list paginated example",
                                                                     value = """
                                                                             {
-                                                                                 "loanApplicationReviews": [
-                                                                                     {
-                                                                                         "email": "client@crediya.com",
-                                                                                         "documentId": "12345678",
-                                                                                         "status": "PENDING",
-                                                                                         "type": "LOW",
-                                                                                         "amount": 327875,
-                                                                                         "term": 2,
-                                                                                         "monthlyDebt": 116899
-                                                                                     },
-                                                                                     {
-                                                                                         "email": "client@crediya.com",
-                                                                                         "documentId": "12345678",
-                                                                                         "status": "PENDING",
-                                                                                         "type": "LOW",
-                                                                                         "amount": 78645,
-                                                                                         "term": 78,
-                                                                                         "monthlyDebt": 116899
-                                                                                     },
-                                                                                     {
-                                                                                         "email": "client@crediya.com",
-                                                                                         "documentId": "12345678",
-                                                                                         "status": "REJECTED",
-                                                                                         "type": "HIGH",
-                                                                                         "amount": 124,
-                                                                                         "term": 4,
-                                                                                         "monthlyDebt": 116899
-                                                                                     }
-                                                                                 ],
-                                                                                 "total": 7,
-                                                                                 "page": 2,
-                                                                                 "size": 4
-                                                                             }
+                                                                                  "loanApplicationReviews": [
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "MANUAL_REVIEW",
+                                                                                            "type": "LOW",
+                                                                                            "interestRate": 9,
+                                                                                            "amount": 876,
+                                                                                            "term": 9,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 878
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "MANUAL_REVIEW",
+                                                                                            "type": "HIGH",
+                                                                                            "interestRate": 60,
+                                                                                            "amount": 23254,
+                                                                                            "term": 96,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 116270
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "PENDING",
+                                                                                            "type": "LOW",
+                                                                                            "interestRate": 9,
+                                                                                            "amount": 124,
+                                                                                            "term": 7,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 125
+                                                                                        },
+                                                                                        {
+                                                                                            "name": "Client",
+                                                                                            "email": "client@crediya.com",
+                                                                                            "documentId": "123456789",
+                                                                                            "status": "PENDING",
+                                                                                            "type": "HIGH",
+                                                                                            "interestRate": 60,
+                                                                                            "amount": 67,
+                                                                                            "term": 2,
+                                                                                            "baseSalary": 1234,
+                                                                                            "monthlyDebt": 345
+                                                                                        }
+                                                                                  ],
+                                                                                  "total": 7,
+                                                                                  "page": 1,
+                                                                                  "size": 4
+                                                                            }
                                                                     """,
                                                                     description = "Loan list example with page and size parameters."
                                                             ),
@@ -201,31 +222,52 @@ public class RouterRest {
                                                                     value = """
                                                                              [
                                                                                  {
+                                                                                     "name": "Client",
                                                                                      "email": "client@crediya.com",
-                                                                                     "documentId": "12345678",
-                                                                                     "status": "PENDING",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "MANUAL_REVIEW",
                                                                                      "type": "LOW",
-                                                                                     "amount": 327875,
-                                                                                     "term": 2,
-                                                                                     "monthlyDebt": 116899
+                                                                                     "interestRate": 9,
+                                                                                     "amount": 876,
+                                                                                     "term": 9,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 878
                                                                                  },
                                                                                  {
+                                                                                     "name": "Client",
                                                                                      "email": "client@crediya.com",
-                                                                                     "documentId": "12345678",
-                                                                                     "status": "PENDING",
-                                                                                     "type": "LOW",
-                                                                                     "amount": 78645,
-                                                                                     "term": 78,
-                                                                                     "monthlyDebt": 116899
-                                                                                 },
-                                                                                 {
-                                                                                     "email": "client@crediya.com",
-                                                                                     "documentId": "12345678",
-                                                                                     "status": "REJECTED",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "MANUAL_REVIEW",
                                                                                      "type": "HIGH",
+                                                                                     "interestRate": 60,
+                                                                                     "amount": 23254,
+                                                                                     "term": 96,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 116270
+                                                                                 },
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "LOW",
+                                                                                     "interestRate": 9,
                                                                                      "amount": 124,
-                                                                                     "term": 4,
-                                                                                     "monthlyDebt": 116899
+                                                                                     "term": 7,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 125
+                                                                                 },
+                                                                                 {
+                                                                                     "name": "Client",
+                                                                                     "email": "client@crediya.com",
+                                                                                     "documentId": "123456789",
+                                                                                     "status": "PENDING",
+                                                                                     "type": "HIGH",
+                                                                                     "interestRate": 60,
+                                                                                     "amount": 67,
+                                                                                     "term": 2,
+                                                                                     "baseSalary": 1234,
+                                                                                     "monthlyDebt": 345
                                                                                  }
                                                                              ]
                                                                     """,
@@ -241,7 +283,7 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/loans"), handler::listenSaveLoan)
-                .andRoute(GET("api/v1/loans"), handler::listenGetLoansList);
+                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate);
     }
 
 }
