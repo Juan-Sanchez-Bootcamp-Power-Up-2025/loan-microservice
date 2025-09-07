@@ -1,10 +1,6 @@
 package co.com.crediya.loan.model.loanapplication;
 
-import lombok.Builder;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -13,23 +9,25 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class LoanApplication {
+public class LoanApplicationReview {
 
-    private String clientName;
+    private String name;
 
     private String email;
 
     private String documentId;
 
-    private BigDecimal baseSalary;
-
     private String status;
 
     private String type;
 
+    private BigDecimal interestRate;
+
     private BigDecimal amount;
 
     private BigDecimal term;
+
+    private BigDecimal baseSalary;
 
     private BigDecimal monthlyDebt;
 

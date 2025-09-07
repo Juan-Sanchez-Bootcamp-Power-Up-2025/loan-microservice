@@ -29,10 +29,10 @@ public class JwtFilter implements WebFilter {
         }
         String auth = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (auth == null) {
-            return Mono.error(new Throwable("No token was found"));
+            return Mono.error(new RuntimeException("No token was found"));
         }
         if (!auth.startsWith("Bearer ")) {
-            return Mono.error(new Throwable("Invalid auth"));
+            return Mono.error(new RuntimeException("Invalid auth"));
         }
         String token = auth.replace("Bearer ", "");
         exchange.getAttributes().put("token", token);

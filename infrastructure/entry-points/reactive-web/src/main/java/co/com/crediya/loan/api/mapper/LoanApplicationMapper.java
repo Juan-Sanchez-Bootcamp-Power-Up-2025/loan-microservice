@@ -12,7 +12,6 @@ public final class LoanApplicationMapper {
                 .amount(loanApplicationRequestDto.amount())
                 .term(loanApplicationRequestDto.term())
                 .email(loanApplicationRequestDto.email())
-                .status("PENDING")
                 .type(loanApplicationRequestDto.type())
                 .documentId(loanApplicationRequestDto.documentId())
                 .build();

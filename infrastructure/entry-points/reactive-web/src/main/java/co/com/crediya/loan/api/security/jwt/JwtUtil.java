@@ -25,15 +25,6 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public String getSubject(String token) {
-        return Jwts.parser()
-                .verifyWith(getKey(secret))
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-    }
-
     private SecretKey getKey(String secret) {
         byte[] secretBytes = Decoders.BASE64URL.decode(secret);
         return Keys.hmacShaKeyFor(secretBytes);
