@@ -40,6 +40,6 @@ VALUES
 INSERT INTO loan_statuses (id, name, description)
 VALUES
 ('PENDING', 'Pending review', 'The loan application was submitted.'),
-('MANUAL_REVIEW', 'Manual review', 'The loan application needs to be reviewed by a consultant.');
-('REJECTED', 'Loan rejected', 'The loan application was rejected.');
+('MANUAL_REVIEW', 'Manual review', 'The loan application needs to be reviewed by a consultant.'),
+('REJECTED', 'Loan rejected', 'The loan application was rejected.'),
 ('APPROVED', 'Loan approved', 'The loan application was approved.');
