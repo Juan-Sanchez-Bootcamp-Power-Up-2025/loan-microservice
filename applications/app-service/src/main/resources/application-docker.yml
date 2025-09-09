@@ -1,0 +1,11 @@
+adapters:
+  r2dbc:
+    host: loan-db
+    port: 5432
+    database: loan
+    schema: public
+    username: loan
+    password: loan
+
+jwt:
+  secret: DQpKdWFuIFNhbmNoZXogQm9vdGNhbXAgUG93ZXIgVXAgMjAyNQ
