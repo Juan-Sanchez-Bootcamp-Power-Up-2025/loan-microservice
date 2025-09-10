@@ -25,8 +25,9 @@ public interface LoanApplicationReactiveRepository extends ReactiveCrudRepositor
             UPDATE loan_applications
             SET status = :status
             WHERE id = :loanApplicationId
+            RETURNING client_name, email, document_id, status, type, amount, term, base_salary, monthly_debt
             """)
-    Mono<Integer> updateStatusLoanApplication(@Param("loanApplicationId") UUID loanApplicationId, @Param("status") String status);
+    Mono<LoanApplication> updateStatusLoanApplication(@Param("loanApplicationId") UUID loanApplicationId, @Param("status") String status);
 
     @Query("""
             SELECT client_name, email, document_id, status, type, amount, term, base_salary, monthly_debt

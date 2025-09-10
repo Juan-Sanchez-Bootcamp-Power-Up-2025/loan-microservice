@@ -2,7 +2,9 @@ package co.com.crediya.loan.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
+import co.com.crediya.loan.model.loanapplication.SQSMessage;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
+import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGateway;
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
 import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
@@ -30,6 +32,8 @@ public class LoanApplicationUseCase {
     private final LoanStatusRepository loanStatusRepository;
 
     private final UserRepository userRepository;
+
+    private final NotificationQueueGateway notificationQueueGateway;
 
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
         return userRepository.validateUserByDocumentId(loanApplication.getEmail(),
@@ -96,12 +100,34 @@ public class LoanApplicationUseCase {
         return loanApplicationRepository.findByLoanApplicationId(loanApplicationId)
                 .switchIfEmpty(Mono.error(new LoanApplicationNotFoundException()))
                 .flatMap(loanApplication -> loanStatusRepository.existsById(status)
-                                .flatMap(valid -> !valid ? Mono.error(new LoanStatusNotFoundException(status))
-                                        : loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
-                                        .flatMap(rows -> rows == 1
-                                                ? Mono.just(loanApplication.toBuilder().status(status).build())
-                                                : Mono.error(new IllegalStateException("The loan application was not updated"))))
+                                .flatMap(valid -> valid
+                                        ? loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
+                                        .switchIfEmpty( Mono.error(new IllegalStateException("The loan application was not updated")))
+                                        .flatMap(updatedloanApplication -> {
+                                                loanApplication.setStatus(status);
+                                                return notificationQueueGateway.publishLoanApplicationStatusChanged(createSQSMessage(loanApplication, loanApplicationId))
+                                                        .doOnError(error -> System.out.println("Error trying to send SQS message"))
+                                                        .thenReturn(loanApplication);
+                                        })
+                                        : Mono.error(new LoanStatusNotFoundException(status))
+                                )
                 );
+    }
+
+    private SQSMessage createSQSMessage(LoanApplication loanApplication, UUID loanApplicationId) {
+        return SQSMessage.builder()
+                .to(loanApplication.getEmail())
+                .subject("Your loan application has been " + loanApplication.getStatus().toLowerCase())
+                .body(
+                        "Dear " + loanApplication.getClientName() + ". \n\n" +
+                                "Your loan application " + loanApplicationId.toString() + " has been " + loanApplication.getStatus().toLowerCase() + ". \n" +
+                                "Here are the details of the loan application:\n" +
+                                "Amount: " + loanApplication.getAmount() + "\n" +
+                                "Term: " + loanApplication.getTerm() + "\n" +
+                                "Monthly debt: " + loanApplication.getMonthlyDebt().toString() + "\n\n" +
+                                "Please do not respond to this email."
+                )
+                .build();
     }
 
 }

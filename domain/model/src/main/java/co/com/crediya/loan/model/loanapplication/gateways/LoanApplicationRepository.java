@@ -14,6 +14,6 @@ public interface LoanApplicationRepository {
 
     Mono<LoanApplication> findByLoanApplicationId(UUID loanApplicationId);
 
-    Mono<Integer> updateStatusLoanApplication(UUID loanApplicationId, String status);
+    Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status);
 
 }

@@ -47,7 +47,7 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
     }
 
     @Override
-    public Mono<Integer> updateStatusLoanApplication(UUID loanApplicationId, String status) {
+    public Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status) {
         log.debug("Updating loan application {} with status {}", loanApplicationId, status);
         return repository.updateStatusLoanApplication(loanApplicationId, status);
     }
