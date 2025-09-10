@@ -4,8 +4,11 @@ import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
+import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.model.user.gateways.UserRepository;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class LoanApplicationUseCase {
@@ -22,6 +26,8 @@ public class LoanApplicationUseCase {
     private final LoanApplicationRepository loanApplicationRepository;
 
     private final LoanTypeRepository loanTypeRepository;
+
+    private final LoanStatusRepository loanStatusRepository;
 
     private final UserRepository userRepository;
 
@@ -84,6 +90,18 @@ public class LoanApplicationUseCase {
                 loanApplication.getBaseSalary(),
                 loanApplication.getMonthlyDebt()
         );
+    }
+
+    public Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status) {
+        return loanApplicationRepository.findByLoanApplicationId(loanApplicationId)
+                .switchIfEmpty(Mono.error(new LoanApplicationNotFoundException()))
+                .flatMap(loanApplication -> loanStatusRepository.existsById(status)
+                                .flatMap(valid -> !valid ? Mono.error(new LoanStatusNotFoundException(status))
+                                        : loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
+                                        .flatMap(rows -> rows == 1
+                                                ? Mono.just(loanApplication.toBuilder().status(status).build())
+                                                : Mono.error(new IllegalStateException("The loan application was not updated"))))
+                );
     }
 
 }
