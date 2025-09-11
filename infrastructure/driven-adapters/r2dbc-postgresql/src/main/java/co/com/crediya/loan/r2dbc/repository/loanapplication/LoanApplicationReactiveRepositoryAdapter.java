@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Slf4j
 @Repository
@@ -37,6 +38,18 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
     public Flux<LoanApplication> getLoanApplicationsWhereStatusNotApproved() {
         log.debug("Querying loan applications with status different approved");
         return repository.getLoanApplicationsWhereStatusNotApproved();
+    }
+
+    @Override
+    public Mono<LoanApplication> findByLoanApplicationId(UUID loanApplicationId) {
+        log.debug("Querying loan application by id");
+        return repository.findByLoanApplicationId(loanApplicationId);
+    }
+
+    @Override
+    public Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status) {
+        log.debug("Updating loan application {} with status {}", loanApplicationId, status);
+        return repository.updateStatusLoanApplication(loanApplicationId, status);
     }
 
 }

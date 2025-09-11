@@ -1,6 +1,7 @@
 package co.com.crediya.loan.api;
 
 import co.com.crediya.loan.api.dto.LoanApplicationRequestDto;
+import co.com.crediya.loan.api.dto.StatusRequestDto;
 import co.com.crediya.loan.api.mapper.LoanApplicationMapper;
 import co.com.crediya.loan.usecase.loanapplication.LoanApplicationUseCase;
 import jakarta.validation.ConstraintViolation;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -82,6 +84,27 @@ public class Handler {
                     .doFinally(signalType -> log.debug("<< GET Paginate /api/v1/loans - end"));
         }
         return listenGetLoansList(serverRequest);
+    }
+
+    @PreAuthorize("hasAuthority('CONSULTANT')")
+    public Mono<ServerResponse> listenUpdateStatusLoanApplication(ServerRequest serverRequest) {
+        UUID loanApplicationId = UUID.fromString(serverRequest.pathVariable("id"));
+        return serverRequest.bodyToMono(StatusRequestDto.class)
+                .doOnSubscribe(subscription -> log.debug(">> PUT /api/v1/loans/{id} - start"))
+                .flatMap(dto -> {
+                    Set<ConstraintViolation<StatusRequestDto>> violations = validator.validate(dto);
+                    return violations.isEmpty() ? Mono.just(dto) : Mono.error(new ConstraintViolationException(violations));
+                })
+                .flatMap(statusRequestDto ->
+                        loanApplicationUseCase.updateStatusLoanApplication(loanApplicationId, statusRequestDto.status())
+                ).doOnSuccess(success -> log.info("Loan updated in the database"))
+                .doOnError(error -> log.error("Loan update failed: {}", error.getMessage()))
+                .flatMap(updatedLoanApplication -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(updatedLoanApplication))
+                .as(transactionalOperator::transactional)
+                .onErrorResume(errorHandler::handle)
+                .doFinally(signalType -> log.debug("<< PUT /api/v1/loans/{id} - end"));
     }
 
 }

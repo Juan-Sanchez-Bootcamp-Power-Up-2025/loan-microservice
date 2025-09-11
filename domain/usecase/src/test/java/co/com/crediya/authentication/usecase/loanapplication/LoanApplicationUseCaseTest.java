@@ -1,12 +1,18 @@
 package co.com.crediya.authentication.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
+import co.com.crediya.loan.model.loanapplication.SQSMessage;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
+import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGateway;
+import co.com.crediya.loan.model.loanstatus.LoanStatus;
+import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.LoanType;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.model.user.User;
 import co.com.crediya.loan.model.user.gateways.UserRepository;
 import co.com.crediya.loan.usecase.loanapplication.LoanApplicationUseCase;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +24,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
 class LoanApplicationUseCaseTest {
@@ -30,14 +38,21 @@ class LoanApplicationUseCaseTest {
     private LoanTypeRepository loanTypeRepository;
 
     @Mock
+    private LoanStatusRepository loanStatusRepository;
+
+    @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationQueueGateway notificationQueueGateway;
 
     private LoanApplicationUseCase loanApplicationUseCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        loanApplicationUseCase = new LoanApplicationUseCase(loanApplicationRepository, loanTypeRepository, userRepository);
+        loanApplicationUseCase = new LoanApplicationUseCase(loanApplicationRepository, loanTypeRepository,
+                loanStatusRepository, userRepository, notificationQueueGateway);
     }
 
     private LoanType sampleLoanType() {
@@ -46,6 +61,13 @@ class LoanApplicationUseCaseTest {
                 .minAmount(BigDecimal.valueOf(1))
                 .maxAmount(BigDecimal.valueOf(12345))
                 .interestRate(BigDecimal.valueOf(9))
+                .build();
+    }
+
+    private LoanStatus sampleLoanStatus() {
+        return LoanStatus.builder()
+                .name("APPROVED")
+                .description("Loan application approved")
                 .build();
     }
 
@@ -68,6 +90,14 @@ class LoanApplicationUseCaseTest {
                 .email("name@email.com")
                 .documentId("12345678")
                 .baseSalary(BigDecimal.valueOf(1234))
+                .build();
+    }
+
+    private SQSMessage sampleSQSMessage() {
+        return SQSMessage.builder()
+                .to("name@email.com")
+                .subject("Your loan application has been approved")
+                .body("Your loan application has been approved")
                 .build();
     }
 
@@ -170,6 +200,92 @@ class LoanApplicationUseCaseTest {
         verify(loanApplicationRepository, times(1))
                 .getLoanApplicationsWhereStatusNotApproved();
         verify(loanTypeRepository, times(5)).findByTypeId(la1.getType());
+    }
+
+    @Test
+    void shouldUpdateLoanApplicationStatus() {
+        UUID loanApplicationId = UUID.randomUUID();
+        LoanStatus loanStatus = sampleLoanStatus();
+
+        LoanApplication original = sampleLoanApplication().toBuilder()
+                .status("PENDING")
+                .build();
+
+        LoanApplication updated = original.toBuilder()
+                .status(loanStatus.getName())
+                .build();
+
+        when(loanApplicationRepository.findByLoanApplicationId(loanApplicationId))
+                .thenReturn(Mono.just(original));
+        when(loanStatusRepository.existsById(loanStatus.getName()))
+                .thenReturn(Mono.just(true));
+        when(loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, loanStatus.getName()))
+                .thenReturn(Mono.just(updated));
+        when(notificationQueueGateway.publishLoanApplicationStatusChanged(any()))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(loanApplicationUseCase.updateStatusLoanApplication(loanApplicationId, loanStatus.getName()))
+                .expectNextMatches(out -> loanStatus.getName().equals(out.getStatus()))
+                .verifyComplete();
+
+        verify(loanApplicationRepository).findByLoanApplicationId(loanApplicationId);
+        verify(loanStatusRepository).existsById(loanStatus.getName());
+        verify(loanApplicationRepository).updateStatusLoanApplication(loanApplicationId, loanStatus.getName());
+        verify(notificationQueueGateway).publishLoanApplicationStatusChanged(any());
+    }
+
+    @Test
+    void shouldFailWhenLoanApplicationNotFound() {
+        UUID id = UUID.randomUUID();
+
+        when(loanApplicationRepository.findByLoanApplicationId(id)).thenReturn(Mono.empty());
+
+        StepVerifier.create(loanApplicationUseCase.updateStatusLoanApplication(id, "APPROVED"))
+                .expectError(LoanApplicationNotFoundException.class)
+                .verify();
+
+        verify(loanApplicationRepository).findByLoanApplicationId(id);
+        verifyNoInteractions(loanStatusRepository);
+        verify(loanApplicationRepository, never()).updateStatusLoanApplication(any(), any());
+        verifyNoInteractions(notificationQueueGateway);
+    }
+
+    @Test
+    void shouldFailWhenStatusDoesNotExist() {
+        UUID id = UUID.randomUUID();
+        LoanApplication la = sampleLoanApplication().toBuilder().status("PENDING").build();
+
+        when(loanApplicationRepository.findByLoanApplicationId(id)).thenReturn(Mono.just(la));
+        when(loanStatusRepository.existsById("APPROVED")).thenReturn(Mono.just(false));
+
+        StepVerifier.create(loanApplicationUseCase.updateStatusLoanApplication(id, "APPROVED"))
+                .expectError(LoanStatusNotFoundException.class)
+                .verify();
+
+        verify(loanApplicationRepository).findByLoanApplicationId(id);
+        verify(loanStatusRepository).existsById("APPROVED");
+        verify(loanApplicationRepository, never()).updateStatusLoanApplication(any(), any());
+        verifyNoInteractions(notificationQueueGateway);
+    }
+
+    @Test
+    void shouldFailWhenUpdateReturnsEmpty() {
+        UUID id = UUID.randomUUID();
+        LoanApplication la = sampleLoanApplication().toBuilder().status("PENDING").build();
+
+        when(loanApplicationRepository.findByLoanApplicationId(id)).thenReturn(Mono.just(la));
+        when(loanStatusRepository.existsById("APPROVED")).thenReturn(Mono.just(true));
+        when(loanApplicationRepository.updateStatusLoanApplication(id, "APPROVED"))
+                .thenReturn(Mono.empty()); // << nada actualizado
+
+        StepVerifier.create(loanApplicationUseCase.updateStatusLoanApplication(id, "APPROVED"))
+                .expectErrorSatisfies(ex -> {
+                    assertThat(ex).isInstanceOf(IllegalStateException.class);
+                    assertThat(ex.getMessage()).isEqualTo("The loan application was not updated");
+                })
+                .verify();
+
+        verify(notificationQueueGateway, never()).publishLoanApplicationStatusChanged(any());
     }
 
 }

@@ -1,6 +1,7 @@
 package co.com.crediya.loan.api;
 
 import co.com.crediya.loan.api.dto.LoanApplicationRequestDto;
+import co.com.crediya.loan.api.dto.StatusRequestDto;
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,8 +22,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import java.util.List;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -38,15 +38,15 @@ public class RouterRest {
                     beanMethod = "listenSaveLoan",
                     operation = @Operation(
                             operationId = "listenSaveLoan",
-                            summary = "Register new loan",
-                            description = "Creates a new loan with amount, term, email, status, type, document id",
+                            summary = "Creates new loan application",
+                            description = "Creates a new loan application with amount, term, email, status, type, document id",
                             requestBody = @RequestBody(
                                     required = true,
                                     content = @Content(
                                             mediaType = "application/json",
                                             schema = @Schema(implementation = LoanApplicationRequestDto.class),
                                             examples = {
-                                                    @ExampleObject(name = "Loan example",
+                                                    @ExampleObject(name = "Loan application example",
                                                             value = """
                                                                     {
                                                                         "email": "name@crediya.com",
@@ -56,7 +56,7 @@ public class RouterRest {
                                                                         "term": 10
                                                                     }
                                                                     """,
-                                                            description = "Loan example to test the creation of a loan."
+                                                            description = "Loan application example to test the creation of a loan application."
                                                     )
                                             }
                                     )
@@ -66,7 +66,7 @@ public class RouterRest {
                                             responseCode = "200", description = "Loan created",
                                             content = @Content(schema = @Schema(implementation = LoanApplication.class),
                                                     examples = {
-                                                            @ExampleObject(name = "Loan example",
+                                                            @ExampleObject(name = "Loan application example",
                                                                     value = """
                                                                     {
                                                                         "email": "name@crediya.com",
@@ -78,7 +78,7 @@ public class RouterRest {
                                                                         "monthlyDebt": 123543
                                                                     }
                                                                     """,
-                                                                    description = "Loan example to test the creation of a loan."
+                                                                    description = "Loan application example to test the creation of a loan application."
                                                             )
                                                     }
                                             )
@@ -141,8 +141,8 @@ public class RouterRest {
                     beanMethod = "listenGetLoansListPaginate",
                     operation = @Operation(
                             operationId = "listenGetLoansListPaginate",
-                            summary = "Gets loans",
-                            description = "Gets loans with status MANUAL_REVISION, PENDING or REJECTED",
+                            summary = "Gets loan applications",
+                            description = "Gets loan applications with status MANUAL_REVISION, PENDING or REJECTED",
                             parameters = {
                                     @Parameter(
                                             name = "page",
@@ -155,10 +155,10 @@ public class RouterRest {
                             },
                             responses = {
                                     @ApiResponse(
-                                            responseCode = "200", description = "Loan list",
+                                            responseCode = "200", description = "Loan application list",
                                             content = @Content(
                                                     examples = {
-                                                            @ExampleObject(name = "Loan list paginated example",
+                                                            @ExampleObject(name = "Loan application list paginated example",
                                                                     value = """
                                                                             {
                                                                                   "loanApplicationReviews": [
@@ -216,9 +216,9 @@ public class RouterRest {
                                                                                   "size": 4
                                                                             }
                                                                     """,
-                                                                    description = "Loan list example with page and size parameters."
+                                                                    description = "Loan applications list example with page and size parameters."
                                                             ),
-                                                            @ExampleObject(name = "Loan list example",
+                                                            @ExampleObject(name = "Loan application list example",
                                                                     value = """
                                                                              [
                                                                                  {
@@ -271,7 +271,84 @@ public class RouterRest {
                                                                                  }
                                                                              ]
                                                                     """,
-                                                                    description = "Loan list example with no parameters."
+                                                                    description = "Loan application list example with no parameters."
+                                                            )
+                                                    }
+                                            )
+                                    ),
+                                    @ApiResponse(responseCode = "500", description = "Internal Error")
+                            }
+                    )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/loans/{id}",
+                    method = RequestMethod.PUT,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    beanClass = Handler.class,
+                    beanMethod = "listenUpdateStatusLoanApplication",
+                    operation = @Operation(
+                            operationId = "listenUpdateStatusLoanApplication",
+                            summary = "Updates loan application status",
+                            description = "Updates the loan application status APPROVED or REJECTED",
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    content = @Content(
+                                            mediaType = "application/json",
+                                            schema = @Schema(implementation = StatusRequestDto.class),
+                                            examples = {
+                                                    @ExampleObject(name = "Status example",
+                                                            value = """
+                                                                    {
+                                                                        "status": "REJECTED"
+                                                                    }
+                                                                    """,
+                                                            description = "Status example to test the the status change."
+                                                    )
+                                            }
+                                    )
+                            ),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200", description = "Loan application status updated",
+                                            content = @Content(
+                                                    examples = {
+                                                            @ExampleObject(name = "Loan example",
+                                                                    value = """
+                                                                            {
+                                                                                "clientName": "Client",
+                                                                                "email": "client@crediya.com",
+                                                                                "documentId": "564854165",
+                                                                                "baseSalary": 4005652,
+                                                                                "status": "REJECTED",
+                                                                                "type": "HIGH",
+                                                                                "amount": 45648,
+                                                                                "term": 8,
+                                                                                "monthlyDebt": 45827
+                                                                            }
+                                                                    """,
+                                                                    description = "Loan application status changed example."
+                                                            )
+                                                    }
+                                            )
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400", description = "Invalid data",
+                                            content = @Content(
+                                                    examples = {
+                                                            @ExampleObject(
+                                                                    name = "Bad request",
+                                                                    value = """
+                                                                            {
+                                                                                "error": "Invalid data",
+                                                                                "violations": [
+                                                                                    {
+                                                                                        "field": "status",
+                                                                                        "message": "status is required"
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                    """,
+                                                                    description = "Bad request for status."
                                                             )
                                                     }
                                             )
@@ -283,7 +360,8 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST("/api/v1/loans"), handler::listenSaveLoan)
-                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate);
+                .andRoute(GET("api/v1/loans"), handler::listenGetLoansListPaginate)
+                .andRoute(PUT("/api/v1/loans/{id}"), handler::listenUpdateStatusLoanApplication);
     }
 
 }
