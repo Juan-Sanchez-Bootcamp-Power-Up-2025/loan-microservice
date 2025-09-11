@@ -1,5 +1,6 @@
 package co.com.crediya.loan.api;
 
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -14,15 +15,19 @@ import java.util.Map;
 public class ErrorHandler {
 
     public Mono<ServerResponse> handle(Throwable ex) {
-        if (ex instanceof ConstraintViolationException constraintViolationException) {
-            return handleConstraintViolationException(constraintViolationException);
-        } else if (ex instanceof LoanTypeNotFoundException loanTypeNotFoundExceptionException) {
-            return handleLoanTypeNotFoundException(loanTypeNotFoundExceptionException);
-        } else if (ex instanceof UserNotFoundException userNotFoundException) {
-            return handleUserNotFoundException(userNotFoundException);
-        }else {
-            return handleException(ex);
-        }
+        return switch (ex) {
+            case ConstraintViolationException constraintViolationException ->
+                    handleConstraintViolationException(constraintViolationException);
+            case LoanTypeNotFoundException loanTypeNotFoundExceptionException ->
+                    handleLoanTypeNotFoundException(loanTypeNotFoundExceptionException);
+            case UserNotFoundException userNotFoundException -> handleUserNotFoundException(userNotFoundException);
+            case LoanApplicationNotFoundException loanApplicationNotFoundException ->
+                    handleLoanApplicationNotFoundException(loanApplicationNotFoundException);
+            case null, default -> {
+                assert ex != null;
+                yield handleException(ex);
+            }
+        };
     }
 
     private Mono<ServerResponse> handleConstraintViolationException(ConstraintViolationException ex) {
@@ -45,6 +50,13 @@ public class ErrorHandler {
     private Mono<ServerResponse> handleUserNotFoundException(UserNotFoundException ex) {
         return ServerResponse.badRequest().bodyValue(Map.of(
                 "error", "User error",
+                "violations", ex.getMessage()
+        ));
+    }
+
+    private Mono<ServerResponse> handleLoanApplicationNotFoundException(LoanApplicationNotFoundException ex) {
+        return ServerResponse.badRequest().bodyValue(Map.of(
+                "error", "Loan Application error",
                 "violations", ex.getMessage()
         ));
     }

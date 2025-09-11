@@ -2,10 +2,15 @@ package co.com.crediya.loan.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
+import co.com.crediya.loan.model.loanapplication.SQSMessage;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
+import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGateway;
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
+import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.model.user.gateways.UserRepository;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
+import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +20,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class LoanApplicationUseCase {
@@ -23,7 +29,11 @@ public class LoanApplicationUseCase {
 
     private final LoanTypeRepository loanTypeRepository;
 
+    private final LoanStatusRepository loanStatusRepository;
+
     private final UserRepository userRepository;
+
+    private final NotificationQueueGateway notificationQueueGateway;
 
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
         return userRepository.validateUserByDocumentId(loanApplication.getEmail(),
@@ -84,6 +94,38 @@ public class LoanApplicationUseCase {
                 loanApplication.getBaseSalary(),
                 loanApplication.getMonthlyDebt()
         );
+    }
+
+    public Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status) {
+        return loanApplicationRepository.findByLoanApplicationId(loanApplicationId)
+                .switchIfEmpty(Mono.error(new LoanApplicationNotFoundException()))
+                .flatMap(loanApplication -> loanStatusRepository.existsById(status)
+                                .flatMap(valid -> valid
+                                        ? loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
+                                        .switchIfEmpty(Mono.error(new IllegalStateException("The loan application was not updated")))
+                                        .flatMap(updatedloanApplication ->
+                                                notificationQueueGateway.publishLoanApplicationStatusChanged(createSQSMessage(updatedloanApplication, loanApplicationId))
+                                                .doOnError(error -> System.out.println("Error trying to send SQS message"))
+                                                .thenReturn(updatedloanApplication))
+                                        : Mono.error(new LoanStatusNotFoundException(status))
+                                )
+                );
+    }
+
+    private SQSMessage createSQSMessage(LoanApplication loanApplication, UUID loanApplicationId) {
+        return SQSMessage.builder()
+                .to(loanApplication.getEmail())
+                .subject("Your loan application has been " + loanApplication.getStatus().toLowerCase())
+                .body(
+                        "Dear " + loanApplication.getClientName() + ". \n\n" +
+                                "Your loan application " + loanApplicationId.toString() + " has been " + loanApplication.getStatus().toLowerCase() + ". \n" +
+                                "Here are the details of the loan application:\n" +
+                                "Amount: " + loanApplication.getAmount() + "\n" +
+                                "Term: " + loanApplication.getTerm() + "\n" +
+                                "Monthly debt: " + loanApplication.getMonthlyDebt().toString() + "\n\n" +
+                                "Please do not respond to this email."
+                )
+                .build();
     }
 
 }
