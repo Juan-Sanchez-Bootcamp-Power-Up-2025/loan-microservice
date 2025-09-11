@@ -20,20 +20,8 @@ public class SQSSenderConfig {
                 .endpointOverride(resolveEndpoint(properties))
                 .region(Region.of(properties.region()))
                 .overrideConfiguration(o -> o.addMetricPublisher(publisher))
-                //.credentialsProvider(getProviderChain())
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials
                         .create(properties.accessKeyId(), properties.secretAccessKey())))
-                .build();
-    }
-
-    private AwsCredentialsProviderChain getProviderChain() {
-        return AwsCredentialsProviderChain.builder()
-                .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())
-                .addCredentialsProvider(SystemPropertyCredentialsProvider.create())
-                .addCredentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
-                .addCredentialsProvider(ProfileCredentialsProvider.create())
-                .addCredentialsProvider(ContainerCredentialsProvider.builder().build())
-                .addCredentialsProvider(InstanceProfileCredentialsProvider.create())
                 .build();
     }
 

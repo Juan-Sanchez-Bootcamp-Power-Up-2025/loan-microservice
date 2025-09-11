@@ -102,13 +102,11 @@ public class LoanApplicationUseCase {
                 .flatMap(loanApplication -> loanStatusRepository.existsById(status)
                                 .flatMap(valid -> valid
                                         ? loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
-                                        .switchIfEmpty( Mono.error(new IllegalStateException("The loan application was not updated")))
-                                        .flatMap(updatedloanApplication -> {
-                                                loanApplication.setStatus(status);
-                                                return notificationQueueGateway.publishLoanApplicationStatusChanged(createSQSMessage(loanApplication, loanApplicationId))
-                                                        .doOnError(error -> System.out.println("Error trying to send SQS message"))
-                                                        .thenReturn(loanApplication);
-                                        })
+                                        .switchIfEmpty(Mono.error(new IllegalStateException("The loan application was not updated")))
+                                        .flatMap(updatedloanApplication ->
+                                                notificationQueueGateway.publishLoanApplicationStatusChanged(createSQSMessage(updatedloanApplication, loanApplicationId))
+                                                .doOnError(error -> System.out.println("Error trying to send SQS message"))
+                                                .thenReturn(updatedloanApplication))
                                         : Mono.error(new LoanStatusNotFoundException(status))
                                 )
                 );
