@@ -52,4 +52,10 @@ public class LoanApplicationReactiveRepositoryAdapter extends ReactiveAdapterOpe
         return repository.updateStatusLoanApplication(loanApplicationId, status);
     }
 
+    @Override
+    public Flux<LoanApplication> getLoanApplicationsWhereStatusApproved(String email, String documentId) {
+        log.debug("Querying loan applications with status approved");
+        return repository.getLoanApplicationsWhereStatusApproved(email, documentId);
+    }
+
 }

@@ -9,7 +9,7 @@ import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.LoanType;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.model.user.User;
-import co.com.crediya.loan.model.user.gateways.UserRepository;
+import co.com.crediya.loan.model.user.gateways.UserGateway;
 import co.com.crediya.loan.usecase.loanapplication.LoanApplicationUseCase;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
@@ -41,7 +41,7 @@ class LoanApplicationUseCaseTest {
     private LoanStatusRepository loanStatusRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserGateway userGateway;
 
     @Mock
     private NotificationQueueGateway notificationQueueGateway;
@@ -52,7 +52,7 @@ class LoanApplicationUseCaseTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         loanApplicationUseCase = new LoanApplicationUseCase(loanApplicationRepository, loanTypeRepository,
-                loanStatusRepository, userRepository, notificationQueueGateway);
+                loanStatusRepository, userGateway, notificationQueueGateway);
     }
 
     private LoanType sampleLoanType() {
@@ -105,7 +105,7 @@ class LoanApplicationUseCaseTest {
     void shouldFailSavingLoanWhenTypeNotExists() {
         LoanApplication loanApplication = sampleLoanApplication();
         when(loanTypeRepository.findByTypeId(loanApplication.getType())).thenReturn(Mono.empty());
-        when(userRepository.validateUserByDocumentId(loanApplication.getEmail(),
+        when(userGateway.validateUserByDocumentId(loanApplication.getEmail(),
                 loanApplication.getDocumentId()))
                 .thenReturn(Mono.just(sampleUser()));
 
@@ -116,7 +116,7 @@ class LoanApplicationUseCaseTest {
                 .verify();
 
         verify(loanTypeRepository, times(1)).findByTypeId(loanApplication.getType());
-        verify(userRepository, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
+        verify(userGateway, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
                 loanApplication.getDocumentId());
         verify(loanApplicationRepository, never()).saveLoanApplication(any());
     }
@@ -125,7 +125,7 @@ class LoanApplicationUseCaseTest {
     void shouldFailSavingLoanWhenUserWithEmailAndDocumentIdNotExists() {
         LoanApplication loanApplication = sampleLoanApplication();
         when(loanTypeRepository.findByTypeId(loanApplication.getType())).thenReturn(Mono.just(sampleLoanType()));
-        when(userRepository.validateUserByDocumentId(loanApplication.getEmail(), loanApplication.getDocumentId()))
+        when(userGateway.validateUserByDocumentId(loanApplication.getEmail(), loanApplication.getDocumentId()))
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(loanApplicationUseCase.saveLoanApplication(loanApplication))
@@ -134,7 +134,7 @@ class LoanApplicationUseCaseTest {
                                 .contains(" was not found."))
                 .verify();
 
-        verify(userRepository, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
+        verify(userGateway, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
                 loanApplication.getDocumentId());
         verify(loanApplicationRepository, never()).saveLoanApplication(any());
     }
@@ -145,7 +145,7 @@ class LoanApplicationUseCaseTest {
         LoanApplication loanApplicationSaved = loanApplication.toBuilder().build();
 
         when(loanTypeRepository.findByTypeId(loanApplication.getType())).thenReturn(Mono.just(sampleLoanType()));
-        when(userRepository.validateUserByDocumentId(loanApplication.getEmail(), loanApplication.getDocumentId()))
+        when(userGateway.validateUserByDocumentId(loanApplication.getEmail(), loanApplication.getDocumentId()))
                 .thenReturn(Mono.just(sampleUser()));
         when(loanApplicationRepository.saveLoanApplication(loanApplication)).thenReturn(Mono.just(loanApplicationSaved));
 
@@ -157,7 +157,7 @@ class LoanApplicationUseCaseTest {
                 .verify();
 
         verify(loanTypeRepository, times(1)).findByTypeId(loanApplication.getType());
-        verify(userRepository, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
+        verify(userGateway, times(1)).validateUserByDocumentId(loanApplication.getEmail(),
                 loanApplication.getDocumentId());
     }
 

@@ -37,5 +37,7 @@ logging:
     co.com.crediya.loan: "DEBUG"
 auth:
   base-url: "http://localhost:8080"
+autoValidation:
+  base-url: ""
 jwt:
   secret: "${JWT_SECRET}"

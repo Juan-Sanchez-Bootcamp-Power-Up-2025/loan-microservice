@@ -1,7 +1,7 @@
 package co.com.crediya.loan.api.http;
 
 import co.com.crediya.loan.model.user.User;
-import co.com.crediya.loan.model.user.gateways.UserRepository;
+import co.com.crediya.loan.model.user.gateways.UserGateway;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AuthVerification implements UserRepository {
+public class AuthVerification implements UserGateway {
 
     private final WebClient authWebClient;
 

@@ -36,4 +36,12 @@ public interface LoanApplicationReactiveRepository extends ReactiveCrudRepositor
             """)
     Mono<LoanApplication> findByLoanApplicationId(@Param("loanApplicationId") UUID loanApplicationId);
 
+    @Query("""
+            SELECT client_name, email, document_id, status, type, amount, term, base_salary, monthly_debt
+            FROM loan_applications
+            WHERE status = 'APPROVED' AND email = :email AND document_id = :documentId
+            ORDER BY status
+            """)
+    Flux<LoanApplication> getLoanApplicationsWhereStatusApproved(@Param("email") String email, @Param("documentId") String documentId);
+
 }
