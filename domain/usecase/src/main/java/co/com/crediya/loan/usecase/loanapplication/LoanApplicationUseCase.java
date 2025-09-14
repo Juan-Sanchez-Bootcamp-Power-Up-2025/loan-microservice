@@ -48,12 +48,12 @@ public class LoanApplicationUseCase {
                         .flatMap(loanType -> {
                             loanApplication.setClientName(user.getName());
                             loanApplication.setBaseSalary(user.getBaseSalary());
-                            loanApplication.setStatus("PENDING");
                             loanApplication.setMonthlyDebt(calculateMonthlyFee(loanApplication.getAmount(),
                                     loanApplication.getTerm(), loanType.getInterestRate()));
                             if (loanType.getValidation()) {
                                 return calculateAutomaticValidation(loanApplication);
                             }
+                            loanApplication.setStatus("PENDING");
                             return loanApplicationRepository.saveLoanApplication(loanApplication);
                         }));
     }
@@ -71,14 +71,12 @@ public class LoanApplicationUseCase {
         return loanApplicationRepository.getLoanApplicationsWhereStatusApproved(loanApplication.getEmail(), loanApplication.getDocumentId())
                 .collectList()
                 .map(loanApplicationsApproved -> createCapacityRequest(loanApplication, loanApplicationsApproved))
-                .flatMap(capacityRequest -> validationGateway
-                        .calculateAutomaticValidation(capacityRequest)
+                .flatMap(validationGateway::calculateAutomaticValidation)
                         .flatMap(validation -> {
                             loanApplication.setStatus(validation.getStatus());
-                            return Mono.just(loanApplication);
+                            return loanApplicationRepository.saveLoanApplication(loanApplication);
                         })
-                        .onErrorResume(error -> Mono.just(loanApplication))
-                );
+                .onErrorResume(e -> Mono.error(new RuntimeException("Auto validation failed ", e)));
     }
 
     private CapacityRequest createCapacityRequest(LoanApplication loanApplication, List<LoanApplication> loanApplicationsApproved) {
