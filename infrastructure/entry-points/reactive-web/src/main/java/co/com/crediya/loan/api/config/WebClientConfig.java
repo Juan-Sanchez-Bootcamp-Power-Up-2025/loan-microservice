@@ -3,6 +3,7 @@ package co.com.crediya.loan.api.config;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +40,7 @@ public class WebClientConfig {
 
     @Bean
     public WebClient autoValidationWebClient(
-            @Value("${autoValidation.base-url}") String baseUrl) {
+            @Value("${auto-validation.base-url}") String baseUrl) {
 
         var httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000)

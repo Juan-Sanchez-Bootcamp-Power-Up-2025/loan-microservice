@@ -76,7 +76,7 @@ public class LoanApplicationUseCase {
                             loanApplication.setStatus(validation.getStatus());
                             return loanApplicationRepository.saveLoanApplication(loanApplication);
                         })
-                .onErrorResume(e -> Mono.error(new RuntimeException("Auto validation failed ", e)));
+                .onErrorResume(e -> Mono.error(new RuntimeException("Auto validation failed " + e)));
     }
 
     private CapacityRequest createCapacityRequest(LoanApplication loanApplication, List<LoanApplication> loanApplicationsApproved) {
@@ -141,7 +141,7 @@ public class LoanApplicationUseCase {
     private SQSMessage createSQSMessage(LoanApplication loanApplication, UUID loanApplicationId) {
         return SQSMessage.builder()
                 .to(loanApplication.getEmail())
-                .subject("Your loan application has been " + loanApplication.getStatus().toLowerCase())
+                .subject("[CrediYa] Your loan application has been " + loanApplication.getStatus())
                 .body(
                         "Dear " + loanApplication.getClientName() + ". \n\n" +
                                 "Your loan application " + loanApplicationId.toString() + " has been " + loanApplication.getStatus().toLowerCase() + ". \n" +

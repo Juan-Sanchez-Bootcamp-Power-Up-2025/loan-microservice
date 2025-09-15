@@ -2,8 +2,8 @@ package co.com.crediya.loan.api.http;
 
 import co.com.crediya.loan.model.user.User;
 import co.com.crediya.loan.model.user.gateways.UserGateway;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -13,10 +13,13 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AuthVerification implements UserGateway {
 
     private final WebClient authWebClient;
+
+    public AuthVerification(@Qualifier("authWebClient") WebClient authWebClient) {
+        this.authWebClient = authWebClient;
+    }
 
     @Override
     public Mono<User> validateUserByDocumentId(String email, String documentId) {
