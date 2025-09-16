@@ -16,4 +16,6 @@ public interface LoanApplicationRepository {
 
     Mono<LoanApplication> updateStatusLoanApplication(UUID loanApplicationId, String status);
 
+    Flux<LoanApplication> getLoanApplicationsWhereStatusApproved(String email, String documentId);
+
 }
