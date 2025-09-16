@@ -8,7 +8,9 @@ import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGatew
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
 import co.com.crediya.loan.model.loanstatus.gateways.LoanStatusRepository;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
-import co.com.crediya.loan.model.user.gateways.UserRepository;
+import co.com.crediya.loan.model.user.gateways.UserGateway;
+import co.com.crediya.loan.model.validation.CapacityRequest;
+import co.com.crediya.loan.model.validation.gateways.ValidationGateway;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanTypeNotFoundException;
@@ -31,12 +33,14 @@ public class LoanApplicationUseCase {
 
     private final LoanStatusRepository loanStatusRepository;
 
-    private final UserRepository userRepository;
+    private final UserGateway userGateway;
 
     private final NotificationQueueGateway notificationQueueGateway;
 
+    private final ValidationGateway validationGateway;
+
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
-        return userRepository.validateUserByDocumentId(loanApplication.getEmail(),
+        return userGateway.validateUserByDocumentId(loanApplication.getEmail(),
                         loanApplication.getDocumentId())
                 .switchIfEmpty(Mono.error(new UserNotFoundException(loanApplication.getDocumentId())))
                 .flatMap(user -> loanTypeRepository.findByTypeId(loanApplication.getType())
@@ -44,9 +48,12 @@ public class LoanApplicationUseCase {
                         .flatMap(loanType -> {
                             loanApplication.setClientName(user.getName());
                             loanApplication.setBaseSalary(user.getBaseSalary());
-                            loanApplication.setStatus("PENDING");
                             loanApplication.setMonthlyDebt(calculateMonthlyFee(loanApplication.getAmount(),
                                     loanApplication.getTerm(), loanType.getInterestRate()));
+                            if (loanType.getValidation()) {
+                                return calculateAutomaticValidation(loanApplication);
+                            }
+                            loanApplication.setStatus("PENDING");
                             return loanApplicationRepository.saveLoanApplication(loanApplication);
                         }));
     }
@@ -58,6 +65,25 @@ public class LoanApplicationUseCase {
         double m = amount.doubleValue();
         double debt = (m * i) / (1 - Math.pow(1 + i, -n));
         return BigDecimal.valueOf(debt).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private Mono<LoanApplication> calculateAutomaticValidation(LoanApplication loanApplication) {
+        return loanApplicationRepository.getLoanApplicationsWhereStatusApproved(loanApplication.getEmail(), loanApplication.getDocumentId())
+                .collectList()
+                .map(loanApplicationsApproved -> createCapacityRequest(loanApplication, loanApplicationsApproved))
+                .flatMap(validationGateway::calculateAutomaticValidation)
+                        .flatMap(validation -> {
+                            loanApplication.setStatus(validation.getStatus());
+                            return loanApplicationRepository.saveLoanApplication(loanApplication);
+                        })
+                .onErrorResume(e -> Mono.error(new RuntimeException("Auto validation failed " + e)));
+    }
+
+    private CapacityRequest createCapacityRequest(LoanApplication loanApplication, List<LoanApplication> loanApplicationsApproved) {
+        return CapacityRequest.builder()
+                .loanApplication(loanApplication)
+                .loanApplicationsApproved(loanApplicationsApproved)
+                .build();
     }
 
     public Flux<LoanApplicationReview> listLoanApplicationsForConsultant() {
@@ -115,7 +141,7 @@ public class LoanApplicationUseCase {
     private SQSMessage createSQSMessage(LoanApplication loanApplication, UUID loanApplicationId) {
         return SQSMessage.builder()
                 .to(loanApplication.getEmail())
-                .subject("Your loan application has been " + loanApplication.getStatus().toLowerCase())
+                .subject("[CrediYa] Your loan application has been " + loanApplication.getStatus())
                 .body(
                         "Dear " + loanApplication.getClientName() + ". \n\n" +
                                 "Your loan application " + loanApplicationId.toString() + " has been " + loanApplication.getStatus().toLowerCase() + ". \n" +

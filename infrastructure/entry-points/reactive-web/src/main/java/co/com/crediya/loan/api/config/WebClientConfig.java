@@ -37,4 +37,24 @@ public class WebClientConfig {
                 .build();
     }
 
+    @Bean
+    public WebClient autoValidationWebClient(
+            @Value("${auto-validation.base-url}") String baseUrl) {
+
+        var httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000)
+                .responseTimeout(Duration.ofSeconds(5))
+                .doOnConnected(conn -> conn
+                        .addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
+                        .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS)));
+
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .exchangeStrategies(ExchangeStrategies.builder()
+                        .codecs(cfg -> cfg.defaultCodecs().maxInMemorySize(512 * 1024))
+                        .build())
+                .build();
+    }
+
 }
