@@ -7,10 +7,16 @@ adapters:
     username: ${DB_USER}
     password: ${DB_PASS}
   sqs:
-    region: ${AWS_REGION}
-    queueUrl: ${AWS_QUEUE_URL}
-    accessKeyId: ${AWS_ACCESS_KEY_ID}
-    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    notifications:
+      region: ${AWS_REGION}
+      queueUrl: ${AWS_NOTIFICATIONS_QUEUE_URL}
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    approved-loans:
+      region: ${AWS_REGION}
+      queueUrl: ${AWS_APPROVED_LOANS_QUEUE_URL}
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
 
 auto-validation:
   base-url: ${AUTH_VALIDATION_BASE_URL}
