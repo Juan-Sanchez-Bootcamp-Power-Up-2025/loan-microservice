@@ -3,6 +3,7 @@ package co.com.crediya.loan.usecase.loanapplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.LoanApplicationReview;
 import co.com.crediya.loan.model.loanapplication.SQSMessage;
+import co.com.crediya.loan.model.loanapplication.gateways.ApprovedLoanQueueGateway;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGateway;
 import co.com.crediya.loan.model.loanapplication.pagination.PageResult;
@@ -37,6 +38,8 @@ public class LoanApplicationUseCase {
 
     private final NotificationQueueGateway notificationQueueGateway;
 
+    private final ApprovedLoanQueueGateway approvedLoanQueueGateway;
+
     private final ValidationGateway validationGateway;
 
     public Mono<LoanApplication> saveLoanApplication(LoanApplication loanApplication) {
@@ -49,13 +52,19 @@ public class LoanApplicationUseCase {
                             loanApplication.setClientName(user.getName());
                             loanApplication.setBaseSalary(user.getBaseSalary());
                             loanApplication.setMonthlyDebt(calculateMonthlyFee(loanApplication.getAmount(),
-                                    loanApplication.getTerm(), loanType.getInterestRate()));
+                                    loanApplication.getTerm(), loanType.getInterestRate())
+                            );
                             if (loanType.getValidation()) {
-                                return calculateAutomaticValidation(loanApplication);
+                                return calculateAutomaticValidation(loanApplication)
+                                        .flatMap(loanApplicationSaved ->
+                                                publishLoanApplicationApproved(loanApplicationSaved)
+                                                        .thenReturn(loanApplicationSaved)
+                                        );
                             }
                             loanApplication.setStatus("PENDING");
                             return loanApplicationRepository.saveLoanApplication(loanApplication);
-                        }));
+                        })
+                );
     }
 
     private BigDecimal calculateMonthlyFee(BigDecimal amount, BigDecimal term, BigDecimal interestRate) {
@@ -72,10 +81,10 @@ public class LoanApplicationUseCase {
                 .collectList()
                 .map(loanApplicationsApproved -> createCapacityRequest(loanApplication, loanApplicationsApproved))
                 .flatMap(validationGateway::calculateAutomaticValidation)
-                        .flatMap(validation -> {
-                            loanApplication.setStatus(validation.getStatus());
-                            return loanApplicationRepository.saveLoanApplication(loanApplication);
-                        })
+                .flatMap(validation -> {
+                    loanApplication.setStatus(validation.getStatus());
+                    return loanApplicationRepository.saveLoanApplication(loanApplication);
+                })
                 .onErrorResume(e -> Mono.error(new RuntimeException("Auto validation failed " + e)));
     }
 
@@ -126,15 +135,20 @@ public class LoanApplicationUseCase {
         return loanApplicationRepository.findByLoanApplicationId(loanApplicationId)
                 .switchIfEmpty(Mono.error(new LoanApplicationNotFoundException()))
                 .flatMap(loanApplication -> loanStatusRepository.existsById(status)
-                                .flatMap(valid -> valid
-                                        ? loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
-                                        .switchIfEmpty(Mono.error(new IllegalStateException("The loan application was not updated")))
-                                        .flatMap(updatedloanApplication ->
-                                                notificationQueueGateway.publishLoanApplicationStatusChanged(createSQSMessage(updatedloanApplication, loanApplicationId))
-                                                .doOnError(error -> System.out.println("Error trying to send SQS message"))
-                                                .thenReturn(updatedloanApplication))
-                                        : Mono.error(new LoanStatusNotFoundException(status))
-                                )
+                        .flatMap(valid -> valid
+                                ? loanApplicationRepository.updateStatusLoanApplication(loanApplicationId, status)
+                                .switchIfEmpty(Mono.error(new IllegalStateException("The loan application was not updated")))
+                                .flatMap(updatedloanApplication ->
+                                        Mono.whenDelayError(
+                                                publishStatusChanged(updatedloanApplication, loanApplicationId)
+                                                        .doOnError(e -> System.out.println("Error sending SQS notification "+ e))
+                                                        .onErrorResume(e -> Mono.empty()),
+                                                publishLoanApplicationApproved(updatedloanApplication)
+                                                        .doOnError(e -> System.out.println("Error sending SQS approved loan "+ e))
+                                                        .onErrorResume(e -> Mono.empty())
+                                        ).thenReturn(updatedloanApplication)
+                                ) : Mono.error(new LoanStatusNotFoundException(status))
+                        )
                 );
     }
 
@@ -152,6 +166,17 @@ public class LoanApplicationUseCase {
                                 "Please do not respond to this email."
                 )
                 .build();
+    }
+
+    private Mono<Void> publishLoanApplicationApproved(LoanApplication loanApplication) {
+        return loanApplication.getStatus().equals("APPROVED")
+                ? approvedLoanQueueGateway.publishLoanApplication(loanApplication)
+                : Mono.empty();
+    }
+
+    private Mono<Void> publishStatusChanged(LoanApplication loanApplication, UUID loanApplicationId) {
+        return notificationQueueGateway
+                .publishLoanApplicationStatusChanged(createSQSMessage(loanApplication, loanApplicationId));
     }
 
 }

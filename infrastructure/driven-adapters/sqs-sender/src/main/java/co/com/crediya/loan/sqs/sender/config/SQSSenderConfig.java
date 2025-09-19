@@ -8,16 +8,13 @@ import software.amazon.awssdk.metrics.MetricPublisher;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
-import java.net.URI;
-
 @Configuration
 @ConditionalOnMissingBean(SqsAsyncClient.class)
 public class SQSSenderConfig {
 
     @Bean
-    public SqsAsyncClient configSqs(SQSSenderProperties properties, MetricPublisher publisher) {
+    public SqsAsyncClient configSqsNotifications(SQSNotificationsSenderProperties properties, MetricPublisher publisher) {
         return SqsAsyncClient.builder()
-                .endpointOverride(resolveEndpoint(properties))
                 .region(Region.of(properties.region()))
                 .overrideConfiguration(o -> o.addMetricPublisher(publisher))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials
@@ -25,10 +22,14 @@ public class SQSSenderConfig {
                 .build();
     }
 
-    private URI resolveEndpoint(SQSSenderProperties properties) {
-        if (properties.endpoint() != null) {
-            return URI.create(properties.endpoint());
-        }
-        return null;
+    @Bean
+    public SqsAsyncClient configSqsApprovedLoans(SQSApprovedLoansSenderProperties properties, MetricPublisher publisher) {
+        return SqsAsyncClient.builder()
+                .region(Region.of(properties.region()))
+                .overrideConfiguration(o -> o.addMetricPublisher(publisher))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials
+                        .create(properties.accessKeyId(), properties.secretAccessKey())))
+                .build();
     }
+
 }

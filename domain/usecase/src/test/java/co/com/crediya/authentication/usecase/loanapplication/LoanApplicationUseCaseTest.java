@@ -2,6 +2,7 @@ package co.com.crediya.authentication.usecase.loanapplication;
 
 import co.com.crediya.loan.model.loanapplication.LoanApplication;
 import co.com.crediya.loan.model.loanapplication.SQSMessage;
+import co.com.crediya.loan.model.loanapplication.gateways.ApprovedLoanQueueGateway;
 import co.com.crediya.loan.model.loanapplication.gateways.LoanApplicationRepository;
 import co.com.crediya.loan.model.loanapplication.gateways.NotificationQueueGateway;
 import co.com.crediya.loan.model.loanstatus.LoanStatus;
@@ -10,6 +11,7 @@ import co.com.crediya.loan.model.loantype.LoanType;
 import co.com.crediya.loan.model.loantype.gateways.LoanTypeRepository;
 import co.com.crediya.loan.model.user.User;
 import co.com.crediya.loan.model.user.gateways.UserGateway;
+import co.com.crediya.loan.model.validation.gateways.ValidationGateway;
 import co.com.crediya.loan.usecase.loanapplication.LoanApplicationUseCase;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanApplicationNotFoundException;
 import co.com.crediya.loan.usecase.loanapplication.exception.LoanStatusNotFoundException;
@@ -46,13 +48,19 @@ class LoanApplicationUseCaseTest {
     @Mock
     private NotificationQueueGateway notificationQueueGateway;
 
+    @Mock
+    private ApprovedLoanQueueGateway approvedLoanQueueGateway;
+
+    @Mock
+    private ValidationGateway validationGateway;
+
     private LoanApplicationUseCase loanApplicationUseCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
         loanApplicationUseCase = new LoanApplicationUseCase(loanApplicationRepository, loanTypeRepository,
-                loanStatusRepository, userGateway, notificationQueueGateway);
+                loanStatusRepository, userGateway, notificationQueueGateway, approvedLoanQueueGateway, validationGateway);
     }
 
     private LoanType sampleLoanType() {
