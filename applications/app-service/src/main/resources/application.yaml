@@ -42,7 +42,7 @@ logging:
     root: "INFO"
     co.com.crediya.loan: "DEBUG"
 auth:
-  base-url: "http://localhost:8080"
+  base-url: "${AUTH_BASE_URL}"
 auto-validation:
   base-url: "${AUTH_VALIDATION_BASE_URL}"
 jwt:

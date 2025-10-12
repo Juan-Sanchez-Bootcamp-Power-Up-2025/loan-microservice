@@ -17,7 +17,8 @@ public class JwtFilter implements WebFilter {
             "/swagger",
             "/webjars",
             "/v3",
-            "/favicon.ico"
+            "/favicon.ico",
+            "/actuator"
     );
 
     @Override
